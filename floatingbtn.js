@@ -1,4 +1,4 @@
-
+   
   window.FloatingCart = (function () {
     let cart = {
       items: [],
@@ -32,6 +32,75 @@
 
     function loadCartFromSalla() {
       try {
+        const cartItems = document.querySelectorAll('form[id^="item-"]');
+        if (cartItems.length > 0) {
+          console.log("Loading cart from DOM elements...");
+          cart.items = [];
+
+          cartItems.forEach((form) => {
+            const itemId = form.querySelector('input[name="id"]')?.value;
+            const itemName = form.querySelector("h1 a")?.textContent?.trim();
+            const itemImage = form.querySelector("img")?.src;
+            const quantityInput = form.querySelector('input[name="quantity"]');
+            const itemQuantity = quantityInput
+              ? parseInt(quantityInput.value) || 1
+              : 1;
+            const priceElement = form.querySelector(".item-price");
+            const itemPrice = priceElement
+              ? extractPrice(priceElement.textContent)
+              : 0;
+
+            if (itemId && itemName) {
+              cart.items.push({
+                id: parseInt(itemId),
+                name: itemName,
+                price: itemPrice,
+                quantity: itemQuantity,
+                image:
+                  itemImage || "https://via.placeholder.com/60x50?text=صورة",
+                currency: "SAR",
+                url: form.querySelector("h1 a")?.href || "#",
+              });
+            }
+          });
+
+          calculateTotals();
+          updateCartDisplay();
+          return;
+        }
+
+        const headerCartSummary = document.querySelector("salla-cart-summary");
+        if (headerCartSummary) {
+          const countElement = headerCartSummary.querySelector(
+            ".s-cart-summary-count"
+          );
+          const totalElement = headerCartSummary.querySelector(
+            ".s-cart-summary-total"
+          );
+
+          if (countElement && totalElement) {
+            cart.count = parseInt(countElement.textContent) || 0;
+            cart.total = extractPrice(totalElement.textContent);
+
+            if (cart.count > 0 && cart.items.length === 0) {
+              cart.items = [
+                {
+                  id: 1,
+                  name: "عناصر السلة",
+                  price: cart.total / cart.count,
+                  quantity: cart.count,
+                  image: "https://via.placeholder.com/60x50?text=سلة",
+                  currency: "SAR",
+                  url: "/cart",
+                },
+              ];
+            }
+
+            updateCartDisplay();
+            return;
+          }
+        }
+
         if (
           window.dataLayer &&
           window.dataLayer[0] &&
@@ -86,7 +155,61 @@
       }
     }
 
+    function extractPrice(text) {
+      if (!text) return 0;
+      const cleanText = text.replace(/[^\d٠-٩,،.]/g, "");
+      const arabicNumerals = "٠١٢٣٤٥٦٧٨٩";
+      const englishNumerals = "0123456789";
+      let converted = cleanText;
+      for (let i = 0; i < arabicNumerals.length; i++) {
+        converted = converted.replace(
+          new RegExp(arabicNumerals[i], "g"),
+          englishNumerals[i]
+        );
+      }
+      converted = converted.replace(/,/g, "");
+      return parseFloat(converted) || 0;
+    }
+
     function setupSallaEventListeners() {
+      const observer = new MutationObserver((mutations) => {
+        let shouldUpdate = false;
+        mutations.forEach((mutation) => {
+          if (mutation.type === "childList") {
+            mutation.addedNodes.forEach((node) => {
+              if (
+                node.nodeType === 1 &&
+                ((node.matches && node.matches('form[id^="item-"]')) ||
+                  (node.querySelector &&
+                    node.querySelector('form[id^="item-"]')))
+              ) {
+                shouldUpdate = true;
+              }
+            });
+            mutation.removedNodes.forEach((node) => {
+              if (
+                node.nodeType === 1 &&
+                ((node.matches && node.matches('form[id^="item-"]')) ||
+                  (node.querySelector &&
+                    node.querySelector('form[id^="item-"]')))
+              ) {
+                shouldUpdate = true;
+              }
+            });
+          }
+        });
+        if (shouldUpdate) {
+          setTimeout(loadCartFromSalla, 300);
+        }
+      });
+
+      const mainContent =
+        document.querySelector(".main-content") || document.body;
+      observer.observe(mainContent, {
+        childList: true,
+        subtree: true,
+      });
+
       if (window.Salla) {
         Salla.onReady(() => {
           loadCartFromSalla();
@@ -100,11 +223,35 @@
               setTimeout(() => {
                 loadCartFromSalla();
                 showAddedAnimation();
+                openCart();
               }, 500);
             });
           }
         });
       }
+
+      document.addEventListener("click", (e) => {
+        if (
+          e.target.closest("salla-add-product-button") ||
+          e.target.closest('[class*="addToCart"]') ||
+          e.target.closest('button[aria-label*="Add to cart"]')
+        ) {
+          setTimeout(() => {
+            loadCartFromSalla();
+            showAddedAnimation();
+            openCart();
+          }, 1000);
+        }
+      });
+
+      document.addEventListener("change", (e) => {
+        if (
+          e.target.name === "quantity" &&
+          e.target.closest('form[id^="item-"]')
+        ) {
+          setTimeout(loadCartFromSalla, 300);
+        }
+      });
 
       if (window.dataLayer) {
         const originalPush = window.dataLayer.push;
@@ -279,16 +426,32 @@
     }
 
     function removeItem(productId) {
-      if (window.salla && window.salla.cart) {  
+      if (window.salla && window.salla.cart) {
         const cartItemElement = document.querySelector(`#item-${productId}`);
         if (cartItemElement) {
           const itemId = cartItemElement.querySelector('input[name="id"]');
           if (itemId) {
-            window.salla.cart.deleteItem(itemId.value).then(() => {
-              loadCartFromSalla();
-            });
+            window.salla.cart
+              .deleteItem(itemId.value)
+              .then(() => {
+                if (cartItemElement) {
+                  cartItemElement.remove();
+                }
+                loadCartFromSalla();
+                console.log("تم حذف العنصر من السلة");
+              })
+              .catch((error) => {
+                console.log("خطأ في حذف العنصر:", error);
+              });
           }
         }
+      } else {
+        cart.items = cart.items.filter(
+          (item) => item.id !== parseInt(productId)
+        );
+        calculateTotals();
+        updateCartDisplay();
+        console.log("تم حذف العنصر محلياً");
       }
     }
 
@@ -323,4 +486,3 @@
       closeCart,
     };
   })();
-
