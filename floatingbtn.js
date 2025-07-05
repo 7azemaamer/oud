@@ -21,7 +21,6 @@ class FloatingCart {
     closeCart?.addEventListener("click", () => this.closeCart());
     overlay?.addEventListener("click", () => this.closeCart());
 
-    // Close on escape key
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape" && this.isOpen) {
         this.closeCart();
@@ -46,10 +45,8 @@ class FloatingCart {
     drawer.style.transform = "translateX(0)";
     drawer.classList.add("floating-cart-slide-in");
 
-    // Prevent body scroll
     document.body.style.overflow = "hidden";
 
-    // Refresh cart data when opening
     this.loadCartData();
   }
 
@@ -62,36 +59,59 @@ class FloatingCart {
     overlay.style.display = "none";
     drawer.classList.remove("floating-cart-slide-in");
 
-    // Restore body scroll
     document.body.style.overflow = "";
   }
 
   async loadCartData() {
     try {
-      // Show loading state
       this.showLoading();
 
-      // Extract cart items from DOM (similar to how main cart works)
       const cartItems = this.extractCartItemsFromDOM();
 
+      console.log("Found cart items:", cartItems.length);
+
       if (cartItems.length === 0) {
-        this.showEmptyCart();
-        this.updateCartCount(0);
-        return;
+        const cartPageItems = this.extractCartItemsFromCartPage();
+        if (cartPageItems.length === 0) {
+          const sallaCartCount = this.getSallaCartCount();
+          console.log("Salla cart count:", sallaCartCount);
+
+          if (sallaCartCount === 0) {
+            this.showEmptyCart();
+            this.updateCartCount(0);
+            return;
+          } else {
+            this.showCartLoadError();
+            this.updateCartCount(sallaCartCount);
+            return;
+          }
+        } else {
+          this.cartData = cartPageItems.map((item) => ({
+            ...item,
+            productData: {
+              id: item.productId || item.cartItemId,
+              name: item.title,
+              image: { url: item.image },
+              price: item.price,
+              currency: "SAR",
+            },
+          }));
+          this.renderCartItems();
+          this.updateCartCount(this.getTotalQuantity());
+          this.updateCartTotal();
+          this.showCartContent();
+          return;
+        }
       }
 
-      // Extract product IDs from cart items
       const productIds = cartItems.map((item) =>
         this.extractProductIdFromCartItem(item)
       );
 
-      // Fetch product data from Salla API
       const productsData = await this.fetchProductsFromAPI(productIds);
 
-      // Merge cart data with product data
       this.cartData = this.mergeCartAndProductData(cartItems, productsData);
 
-      // Update UI
       this.renderCartItems();
       this.updateCartCount(this.getTotalQuantity());
       this.updateCartTotal();
@@ -116,10 +136,8 @@ class FloatingCart {
       const linkElement = form.querySelector('a[href*="/ar/"]');
 
       if (quantityInput && priceElement) {
-        // Extract product ID from link or form attributes
         let productId = null;
         if (linkElement) {
-          // Extract from URL patterns like /ar/PdvYWyr or /ar/product-slug
           const urlMatch = linkElement.href.match(/\/ar\/([^\/]+)$/);
           if (urlMatch) {
             productId = this.getProductIdFromSlug(urlMatch[1]);
@@ -142,8 +160,61 @@ class FloatingCart {
     return cartItems;
   }
 
+  extractCartItemsFromCartPage() {
+    const cartItems = [];
+
+    const cartSections = document.querySelectorAll(
+      "section.cart-item, .cart-item"
+    );
+
+    cartSections.forEach((section) => {
+      try {
+        const hiddenInput = section.querySelector('input[name="id"]');
+        const cartItemId = hiddenInput ? hiddenInput.value : null;
+
+        if (!cartItemId) return;
+
+        const quantityInput = section.querySelector(
+          'input[name="quantity"], .s-quantity-input-input'
+        );
+        const priceElement = section.querySelector(".item-price");
+        const totalElement = section.querySelector(".item-total");
+        const titleElement = section.querySelector("h1 a, .product-title a");
+        const imageElement = section.querySelector("img");
+        const linkElement = section.querySelector('a[href*="/ar/"]');
+
+        if (quantityInput && priceElement) {
+          let productId = null;
+          if (linkElement) {
+            const urlMatch = linkElement.href.match(/\/ar\/([^\/]+)$/);
+            if (urlMatch) {
+              productId = this.getProductIdFromSlug(urlMatch[1]);
+            }
+          }
+
+          cartItems.push({
+            cartItemId,
+            productId,
+            quantity: parseInt(quantityInput.value) || 1,
+            price: this.extractPrice(priceElement.textContent),
+            total: this.extractPrice(
+              totalElement?.textContent || priceElement.textContent
+            ),
+            title: titleElement?.textContent?.trim() || "",
+            image: imageElement?.src || "",
+            link: linkElement?.href || "",
+          });
+        }
+      } catch (error) {
+        console.error("Error extracting cart item:", error);
+      }
+    });
+
+    console.log("Cart page items found:", cartItems.length);
+    return cartItems;
+  }
+
   getProductIdFromSlug(slug) {
-    // Map common slugs to product IDs based on the API response
     const slugToIdMap = {
       PdvYWyr: "29587259",
       onDxBPZ: "1045891903",
@@ -155,18 +226,15 @@ class FloatingCart {
   }
 
   extractProductIdFromCartItem(cartItem) {
-    // Try to get product ID from various sources
     if (cartItem.productId) {
       return cartItem.productId;
     }
 
-    // Fallback: extract from cart item ID or other attributes
     return cartItem.cartItemId;
   }
 
   async fetchProductsFromAPI(productIds) {
-    try {
-      // Create API URL similar to the one you provided
+    try {       
       const validIds = productIds.filter((id) => id && id !== "");
       if (validIds.length === 0) return [];
 
@@ -336,7 +404,6 @@ class FloatingCart {
     if (newQuantity < 1) return;
 
     try {
-      // Update quantity using Salla's cart API
       const cartItemElement = document.querySelector(`#item-${cartItemId}`);
       if (cartItemElement) {
         const quantityInput = cartItemElement.querySelector(
@@ -345,11 +412,9 @@ class FloatingCart {
         if (quantityInput) {
           quantityInput.value = newQuantity;
 
-          // Trigger change event to update via Salla's system
           const changeEvent = new Event("change", { bubbles: true });
           quantityInput.dispatchEvent(changeEvent);
 
-          // Trigger Salla's form onChange if available
           if (
             typeof salla !== "undefined" &&
             salla.form &&
@@ -360,7 +425,6 @@ class FloatingCart {
         }
       }
 
-      // Refresh cart data after a short delay
       setTimeout(() => {
         this.loadCartData();
         this.showPulseAnimation();
@@ -372,18 +436,15 @@ class FloatingCart {
 
   async removeItem(cartItemId) {
     try {
-      // Use Salla's cart delete function if available
       if (typeof salla !== "undefined" && salla.cart && salla.cart.deleteItem) {
         await salla.cart.deleteItem(cartItemId);
 
-        // Remove the element from DOM
         const cartItemElement = document.querySelector(`#item-${cartItemId}`);
         if (cartItemElement) {
           cartItemElement.remove();
         }
       }
 
-      // Refresh cart data
       setTimeout(() => {
         this.loadCartData();
         this.showPulseAnimation();
@@ -411,8 +472,16 @@ class FloatingCart {
 
   updateCartTotal() {
     const totalElement = document.getElementById("cart-total");
+    const subtotalElement = document.getElementById("cart-subtotal");
+
     if (totalElement) {
       totalElement.textContent = `${this.formatPrice(
+        this.getTotalPrice()
+      )} ر.س`;
+    }
+
+    if (subtotalElement) {
+      subtotalElement.textContent = `${this.formatPrice(
         this.getTotalPrice()
       )} ر.س`;
     }
@@ -450,6 +519,62 @@ class FloatingCart {
     if (footer) footer.style.display = "block";
   }
 
+  showCartLoadError() {
+    const loading = document.getElementById("cart-loading");
+    const empty = document.getElementById("cart-empty");
+    const footer = document.getElementById("cart-footer");
+    const items = document.getElementById("cart-items");
+
+    if (loading) loading.style.display = "none";
+    if (empty) empty.style.display = "none";
+    if (footer) footer.style.display = "block";
+
+    if (items) {
+      items.innerHTML = `
+        <div style="text-align: center; padding: 48px 24px; color: #6b7280;">
+          <div style="
+            width: 64px;
+            height: 64px;
+            background-color: #f3f4f6;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+          ">
+            <i class="sicon-refresh" style="font-size: 24px; color: #9ca3af;"></i>
+          </div>
+          <h3 style="
+            font-size: 16px;
+            font-weight: 600;
+            margin: 0 0 8px 0;
+            color: #111827;
+          ">
+            عذراً، لا يمكن تحميل تفاصيل السلة
+          </h3>
+          <p style="margin: 0 0 16px 0; font-size: 14px;">
+            يرجى الانتقال إلى صفحة السلة لعرض المنتجات
+          </p>
+          <button 
+            onclick="window.location.href='https://oudnna.com/ar/cart'"
+            style="
+              background-color: #000000;
+              color: #ffffff;
+              padding: 8px 16px;
+              border: none;
+              border-radius: 6px;
+              font-size: 14px;
+              cursor: pointer;
+              transition: all 0.2s ease;
+            "
+          >
+            عرض السلة
+          </button>
+        </div>
+      `;
+    }
+  }
+
   extractPrice(priceText) {
     if (!priceText) return 0;
     const cleanPrice = priceText.replace(/[^\d\u0660-\u0669,.-]/g, "");
@@ -480,8 +605,7 @@ class FloatingCart {
     }
   }
 
-  observeCartChanges() {
-    // Watch for DOM changes in cart area
+  observeCartChanges() {        
     const cartContainer = document.querySelector(".main-content");
     if (cartContainer) {
       const observer = new MutationObserver((mutations) => {
@@ -522,7 +646,7 @@ class FloatingCart {
       });
     }
 
-    // Watch for quantity input changes
+    
     document.addEventListener("input", (e) => {
       if (
         e.target.matches('input[name="quantity"]') &&
@@ -532,7 +656,7 @@ class FloatingCart {
       }
     });
 
-    // Watch for cart delete operations
+
     document.addEventListener("click", (e) => {
       if (
         e.target.closest(".btn--delete") &&
@@ -542,14 +666,45 @@ class FloatingCart {
       }
     });
   }
+
+  getSallaCartCount() {
+    try {
+      const cartSummary = document.querySelector("salla-cart-summary");
+      if (cartSummary && cartSummary.getAttribute("count")) {
+        return parseInt(cartSummary.getAttribute("count")) || 0;
+      }
+
+      const cartBadge = document.querySelector(
+        ".cart-badge, [data-cart-count]"
+      );
+      if (cartBadge) {
+        const count =
+          cartBadge.textContent.trim() ||
+          cartBadge.getAttribute("data-cart-count");
+        return parseInt(count) || 0;
+      }
+
+      const headerCart = document.querySelector(
+        ".header-cart .count, .cart-count"
+      );
+      if (headerCart) {
+        return parseInt(headerCart.textContent) || 0;
+      }
+
+      return 0;
+    } catch (error) {
+      console.error("Error getting Salla cart count:", error);
+      return 0;
+    }
+  }
 }
 
-// Initialize floating cart when DOM is ready
+
 document.addEventListener("DOMContentLoaded", () => {
   window.floatingCart = new FloatingCart();
 });
 
-// Also initialize immediately if DOM is already loaded
+
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", () => {
     if (!window.floatingCart) {
