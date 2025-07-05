@@ -67,50 +67,32 @@ class FloatingCart {
       this.showLoading();
 
       const cartItems = this.extractCartItemsFromDOM();
-
       console.log("Found cart items:", cartItems.length);
 
       if (cartItems.length === 0) {
-        const cartPageItems = this.extractCartItemsFromCartPage();
-        if (cartPageItems.length === 0) {
-          const sallaCartCount = this.getSallaCartCount();
-          console.log("Salla cart count:", sallaCartCount);
+        const sallaCartCount = this.getSallaCartCount();
+        console.log("Salla cart count:", sallaCartCount);
 
-          if (sallaCartCount === 0) {
-            this.showEmptyCart();
-            this.updateCartCount(0);
-            return;
-          } else {
-            this.showCartLoadError();
-            this.updateCartCount(sallaCartCount);
-            return;
-          }
+        if (sallaCartCount === 0) {
+          this.showEmptyCart();
+          this.updateCartCount(0);
         } else {
-          this.cartData = cartPageItems.map((item) => ({
-            ...item,
-            productData: {
-              id: item.productId || item.cartItemId,
-              name: item.title,
-              image: { url: item.image },
-              price: item.price,
-              currency: "SAR",
-            },
-          }));
-          this.renderCartItems();
-          this.updateCartCount(this.getTotalQuantity());
-          this.updateCartTotal();
-          this.showCartContent();
-          return;
+          this.showCartLoadError();
+          this.updateCartCount(sallaCartCount);
         }
+        return;
       }
 
-      const productIds = cartItems.map((item) =>
-        this.extractProductIdFromCartItem(item)
-      );
-
-      const productsData = await this.fetchProductsFromAPI(productIds);
-
-      this.cartData = this.mergeCartAndProductData(cartItems, productsData);
+      this.cartData = cartItems.map((item) => ({
+        ...item,
+        productData: {
+          id: item.productId || item.cartItemId,
+          name: item.title,
+          image: { url: item.image },
+          price: item.price,
+          currency: "SAR",
+        },
+      }));
 
       this.renderCartItems();
       this.updateCartCount(this.getTotalQuantity());
@@ -124,18 +106,39 @@ class FloatingCart {
 
   extractCartItemsFromDOM() {
     const cartItems = [];
+
+    // Look for cart forms like in cart.html: <form id="item-{cartItemId}">
     const cartForms = document.querySelectorAll('form[id^="item-"]');
 
     cartForms.forEach((form) => {
-      const cartItemId = form.id.replace("item-", "");
-      const quantityInput = form.querySelector('input[name="quantity"]');
-      const priceElement = form.querySelector(".item-price");
-      const totalElement = form.querySelector(".item-total");
-      const titleElement = form.querySelector("h1 a, .product-card__title a");
-      const imageElement = form.querySelector("img");
-      const linkElement = form.querySelector('a[href*="/ar/"]');
+      try {
+        const cartItemId = form.id.replace("item-", "");
 
-      if (quantityInput && priceElement) {
+        // Get hidden input with cart item ID
+        const hiddenInput = form.querySelector('input[name="id"]');
+        if (!hiddenInput || hiddenInput.value !== cartItemId) return;
+
+        // Get product details exactly as shown in cart.html
+        const imageElement = form.querySelector("img");
+        const titleElement = form.querySelector("h1 a, .product-title a");
+        const priceElement = form.querySelector(".item-price");
+        const totalElement = form.querySelector(".item-total");
+        const quantityInput = form.querySelector(
+          'input[name="quantity"], salla-quantity-input'
+        );
+        const linkElement = form.querySelector('a[href*="/ar/"]');
+
+        if (!quantityInput || !priceElement) return;
+
+        // Extract quantity value
+        let quantity = 1;
+        if (quantityInput.tagName === "SALLA-QUANTITY-INPUT") {
+          quantity = parseInt(quantityInput.getAttribute("value")) || 1;
+        } else {
+          quantity = parseInt(quantityInput.value) || 1;
+        }
+
+        // Extract product ID from URL
         let productId = null;
         if (linkElement) {
           const urlMatch = linkElement.href.match(/\/ar\/([^\/]+)$/);
@@ -144,73 +147,31 @@ class FloatingCart {
           }
         }
 
+        // Get image source (prefer data-src over src)
+        let imageSrc = "";
+        if (imageElement) {
+          imageSrc =
+            imageElement.getAttribute("data-src") || imageElement.src || "";
+        }
+
         cartItems.push({
           cartItemId,
           productId,
-          quantity: parseInt(quantityInput.value) || 1,
+          quantity: quantity,
           price: this.extractPrice(priceElement.textContent),
-          total: this.extractPrice(totalElement?.textContent || "0"),
+          total: this.extractPrice(
+            totalElement?.textContent || priceElement.textContent
+          ),
           title: titleElement?.textContent?.trim() || "",
-          image: imageElement?.src || "",
+          image: imageSrc,
           link: linkElement?.href || "",
         });
-      }
-    });
-
-    return cartItems;
-  }
-
-  extractCartItemsFromCartPage() {
-    const cartItems = [];
-
-    const cartSections = document.querySelectorAll(
-      "section.cart-item, .cart-item"
-    );
-
-    cartSections.forEach((section) => {
-      try {
-        const hiddenInput = section.querySelector('input[name="id"]');
-        const cartItemId = hiddenInput ? hiddenInput.value : null;
-
-        if (!cartItemId) return;
-
-        const quantityInput = section.querySelector(
-          'input[name="quantity"], .s-quantity-input-input'
-        );
-        const priceElement = section.querySelector(".item-price");
-        const totalElement = section.querySelector(".item-total");
-        const titleElement = section.querySelector("h1 a, .product-title a");
-        const imageElement = section.querySelector("img");
-        const linkElement = section.querySelector('a[href*="/ar/"]');
-
-        if (quantityInput && priceElement) {
-          let productId = null;
-          if (linkElement) {
-            const urlMatch = linkElement.href.match(/\/ar\/([^\/]+)$/);
-            if (urlMatch) {
-              productId = this.getProductIdFromSlug(urlMatch[1]);
-            }
-          }
-
-          cartItems.push({
-            cartItemId,
-            productId,
-            quantity: parseInt(quantityInput.value) || 1,
-            price: this.extractPrice(priceElement.textContent),
-            total: this.extractPrice(
-              totalElement?.textContent || priceElement.textContent
-            ),
-            title: titleElement?.textContent?.trim() || "",
-            image: imageElement?.src || "",
-            link: linkElement?.href || "",
-          });
-        }
       } catch (error) {
         console.error("Error extracting cart item:", error);
       }
     });
 
-    console.log("Cart page items found:", cartItems.length);
+    console.log("Extracted cart items:", cartItems);
     return cartItems;
   }
 
@@ -223,61 +184,6 @@ class FloatingCart {
     };
 
     return slugToIdMap[slug] || slug;
-  }
-
-  extractProductIdFromCartItem(cartItem) {
-    if (cartItem.productId) {
-      return cartItem.productId;
-    }
-
-    return cartItem.cartItemId;
-  }
-
-  async fetchProductsFromAPI(productIds) {
-    try {       
-      const validIds = productIds.filter((id) => id && id !== "");
-      if (validIds.length === 0) return [];
-
-      const sourceValues = validIds
-        .map((id) => `source_value[]=${id}`)
-        .join("&");
-      const apiUrl = `https://api.salla.dev/store/v1/products?source=selected&${sourceValues}`;
-
-      const response = await fetch(apiUrl);
-      const data = await response.json();
-
-      return data.success ? data.data : [];
-    } catch (error) {
-      console.error("Error fetching products from API:", error);
-      return [];
-    }
-  }
-
-  mergeCartAndProductData(cartItems, productsData) {
-    return cartItems.map((cartItem) => {
-      const productData = productsData.find(
-        (p) =>
-          p.id === cartItem.productId ||
-          p.id === cartItem.cartItemId ||
-          this.normalizeArabicName(p.name) ===
-            this.normalizeArabicName(cartItem.title)
-      );
-
-      return {
-        ...cartItem,
-        productData: productData || {
-          id: cartItem.productId || cartItem.cartItemId,
-          name: cartItem.title,
-          image: { url: cartItem.image },
-          price: cartItem.price,
-          currency: "SAR",
-        },
-      };
-    });
-  }
-
-  normalizeArabicName(name) {
-    return name?.replace(/[\u064B-\u065F\u0670\u0640]/g, "").trim() || "";
   }
 
   renderCartItems() {
@@ -294,109 +200,82 @@ class FloatingCart {
     const product = item.productData;
 
     return `
-      <section class="cart-item bg-storeBG p-5 xs:p-7 rounded-md mb-5 relative border border-primary">
-        <input type="hidden" name="id" value="${item.cartItemId}">
+      <form id="item-${item.cartItemId}">
+        <section class="cart-item bg-storeBG p-5 xs:p-7 rounded-md mb-5 relative border border-primary">
+          <input type="hidden" name="id" value="${item.cartItemId}">
 
-        <!-- product -->
-        <div class="md:flex rtl:space-x-reverse md:space-x-12 items-start justify-between mb-8 last:mb-0">
-          <div class="flex flex-1 rtl:space-x-reverse space-x-4">
-            <a href="${item.link}" class="shrink-0">
-              <img 
-                src="${product.image?.url || item.image || ""}" 
-                alt="${product.name || item.title}"
-                class="lazy flex-none w-24 h-20 border border-gray-200 bg-gray-100 rounded-md object-center object-cover"
-                loading="lazy"
-                onerror="this.style.display='none'"
-              />
-            </a>
+          <!-- product -->
+          <div class="md:flex rtl:space-x-reverse md:space-x-12 items-start justify-between mb-8 last:mb-0">
+            <div class="flex flex-1 rtl:space-x-reverse space-x-4">
+              <a href="${item.link}" class="shrink-0">
+                <img 
+                  src="${product.image?.url || item.image || ""}" 
+                  alt="${product.name || item.title}"
+                  class="flex-none w-24 h-20 border border-gray-200 bg-gray-100 rounded-md object-center object-cover"
+                  loading="lazy"
+                  onerror="this.style.display='none'"
+                />
+              </a>
 
-            <div class="space-y-1">
-              <h1 class="text-store-text-primary leading-6 text-lg">
-                <a href="${item.link}" class="text-base">${
+              <div class="space-y-1">
+                <h1 class="text-store-text-primary leading-6 text-lg">
+                  <a href="${item.link}" class="text-base">${
       product.name || item.title
     }</a>
-              </h1>
-              <span class="text-sm text-store-text-secondary line-through item-regular-price hidden">${this.formatPrice(
-                item.price
-              )} <i class="sicon-sar"></i></span>
-              <span class="item-price text-sm text-store-text-secondary">${this.formatPrice(
-                item.price
-              )} <i class="sicon-sar"></i></span>
-              <p class="text-sm text-store-text-secondary">
-                الوزن
-                <span>٠٫١١ كجم</span>
-              </p>
-              <i class="sicon-discount-calculator text-store-text-secondary offer-icon hidden"></i>
-              <span class="text-sm text-store-text-secondary offer-name hidden"></span>
+                </h1>
+                <span class="text-sm text-store-text-secondary line-through item-regular-price hidden">${this.formatPrice(
+                  item.price
+                )} <i class="sicon-sar"></i></span>
+                <span class="item-price text-sm text-store-text-secondary">${this.formatPrice(
+                  item.price
+                )} <i class="sicon-sar"></i></span>
+                <p class="text-sm text-store-text-secondary">
+                  الوزن
+                  <span>٠٫١١ كجم</span>
+                </p>
+                <i class="sicon-discount-calculator text-store-text-secondary offer-icon hidden"></i>
+                <span class="text-sm text-store-text-secondary offer-name hidden"></span>
+              </div>
             </div>
-          </div>
 
-          <div class="flex-1 border-t border-b border-gray-200 py-3 md:p-0 md:border-none mt-5 md:mt-0 flex justify-between items-center md:items-start">
-            <div class="s-quantity-input-container">
-              <button 
-                class="s-quantity-input-increase-button s-quantity-input-button" 
-                type="button"
-                onclick="floatingCart.updateQuantity('${item.cartItemId}', ${
-      item.quantity + 1
-    })"
-              >
-                <span>
-                  <svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
-                    <path d="M26.667 14.667h-9.333v-9.333c0-0.736-0.597-1.333-1.333-1.333s-1.333 0.597-1.333 1.333v9.333h-9.333c-0.736 0-1.333 0.597-1.333 1.333s0.597 1.333 1.333 1.333h9.333v9.333c0 0.736 0.597 1.333 1.333 1.333s1.333-0.597 1.333-1.333v-9.333h9.333c0.736 0 1.333-0.597 1.333-1.333s-0.597-1.333-1.333-1.333z"></path>
-                  </svg>
-                </span>
-              </button>
-              <input 
-                class="s-quantity-input-input" 
+            <div class="flex-1 border-t border-b border-gray-200 py-3 md:p-0 md:border-none mt-5 md:mt-0 flex justify-between items-center md:items-start">
+              <salla-quantity-input 
                 cart-item-id="${item.cartItemId}" 
+                max="" 
+                class="transition transition-color duration-300" 
+                value="${item.quantity}" 
                 name="quantity" 
-                aria-label="Quantity" 
-                min="1"
-                value="${item.quantity}"
-                readonly
-              />
-              <button 
-                class="s-quantity-input-decrease-button s-quantity-input-button" 
-                type="button"
-                onclick="floatingCart.updateQuantity('${item.cartItemId}', ${
-      item.quantity - 1
-    })"
-                ${
-                  item.quantity <= 1
-                    ? 'disabled style="opacity: 0.5; cursor: not-allowed;"'
-                    : ""
-                }
-              >
-                <span>
-                  <svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
-                    <path d="M26.667 14.667h-21.333c-0.736 0-1.333 0.597-1.333 1.333s0.597 1.333 1.333 1.333h21.333c0.736 0 1.333-0.597 1.333-1.333s-0.597-1.333-1.333-1.333z"></path>
-                  </svg>
-                </span>
-              </button>
+                aria-label="Quantity">
+              </salla-quantity-input>
+              
+              <p class="text-primary flex-none font-bold text-sm rtl:md:pl-12 ltr:md:pr-12">
+                <span>المجموع:</span>
+                <span class="inline-block item-total">${this.formatPrice(
+                  item.total
+                )} <i class="sicon-sar"></i></span>
+              </p>
             </div>
-            
-            <p class="text-primary flex-none font-bold text-sm rtl:md:pl-12 ltr:md:pr-12">
-              <span>المجموع:</span>
-              <span class="inline-block item-total">${this.formatPrice(
-                item.total
-              )} <i class="sicon-sar"></i></span>
-            </p>
           </div>
-        </div>
 
-        <span class="absolute top-1.5 rtl:left-1.5 ltr:right-1.5 rtl:xs:left-5 ltr:xs:right-5 xs:top-5">
-          <button 
-            type="button" 
-            class="btn--delete s-button-element s-button-icon s-button-solid s-button-small s-button-danger s-button-loader-center" 
-            onclick="floatingCart.removeItem('${item.cartItemId}')" 
-            aria-label="Remove from the cart"
-          >
-            <span class="s-button-text">
+          <span class="absolute top-1.5 rtl:left-1.5 ltr:right-1.5 rtl:xs:left-5 ltr:xs:right-5 xs:top-5">
+            <salla-button 
+              type="button" 
+              shape="icon" 
+              size="small" 
+              color="danger" 
+              class="btn--delete" 
+              onclick="salla.cart.deleteItem(${
+                item.cartItemId
+              }).then(() => document.querySelector('#item-${
+      item.cartItemId
+    }').remove())" 
+              aria-label="Remove from the cart"
+            >
               <i class="sicon-cancel"></i>
-            </span>
-          </button>
-        </span>
-      </section>
+            </salla-button>
+          </span>
+        </section>
+      </form>
     `;
   }
 
@@ -404,17 +283,18 @@ class FloatingCart {
     if (newQuantity < 1) return;
 
     try {
-      const cartItemElement = document.querySelector(`#item-${cartItemId}`);
-      if (cartItemElement) {
-        const quantityInput = cartItemElement.querySelector(
-          'input[name="quantity"]'
+      // Find the form element
+      const formElement = document.querySelector(`#item-${cartItemId}`);
+      if (formElement) {
+        // Look for salla-quantity-input component
+        const quantityComponent = formElement.querySelector(
+          `salla-quantity-input[cart-item-id="${cartItemId}"]`
         );
-        if (quantityInput) {
-          quantityInput.value = newQuantity;
+        if (quantityComponent) {
+          quantityComponent.setAttribute("value", newQuantity);
 
+          // Trigger Salla's form change event
           const changeEvent = new Event("change", { bubbles: true });
-          quantityInput.dispatchEvent(changeEvent);
-
           if (
             typeof salla !== "undefined" &&
             salla.form &&
@@ -425,10 +305,11 @@ class FloatingCart {
         }
       }
 
+      // Refresh cart data after a short delay
       setTimeout(() => {
         this.loadCartData();
         this.showPulseAnimation();
-      }, 500);
+      }, 1000);
     } catch (error) {
       console.error("Error updating quantity:", error);
     }
@@ -436,19 +317,21 @@ class FloatingCart {
 
   async removeItem(cartItemId) {
     try {
+      // Use Salla's cart delete function exactly as in cart.html
       if (typeof salla !== "undefined" && salla.cart && salla.cart.deleteItem) {
-        await salla.cart.deleteItem(cartItemId);
-
-        const cartItemElement = document.querySelector(`#item-${cartItemId}`);
-        if (cartItemElement) {
-          cartItemElement.remove();
-        }
+        await salla.cart.deleteItem(cartItemId).then(() => {
+          const itemElement = document.querySelector(`#item-${cartItemId}`);
+          if (itemElement) {
+            itemElement.remove();
+          }
+        });
       }
 
+      // Refresh cart data
       setTimeout(() => {
         this.loadCartData();
         this.showPulseAnimation();
-      }, 300);
+      }, 500);
     } catch (error) {
       console.error("Error removing item:", error);
     }
@@ -605,7 +488,7 @@ class FloatingCart {
     }
   }
 
-  observeCartChanges() {        
+  observeCartChanges() {
     const cartContainer = document.querySelector(".main-content");
     if (cartContainer) {
       const observer = new MutationObserver((mutations) => {
@@ -636,7 +519,7 @@ class FloatingCart {
         });
 
         if (shouldUpdate) {
-          setTimeout(() => this.loadCartData(), 300);
+          setTimeout(() => this.loadCartData(), 500);
         }
       });
 
@@ -646,23 +529,39 @@ class FloatingCart {
       });
     }
 
-    
-    document.addEventListener("input", (e) => {
+    // Listen for Salla form changes
+    document.addEventListener("change", (e) => {
       if (
-        e.target.matches('input[name="quantity"]') &&
-        e.target.closest('form[id^="item-"]')
+        e.target.closest("salla-quantity-input") ||
+        e.target.matches('input[name="quantity"]')
       ) {
-        setTimeout(() => this.loadCartData(), 500);
+        setTimeout(() => this.loadCartData(), 1000);
       }
     });
 
+    // Listen for Salla cart events
+    if (typeof salla !== "undefined") {
+      // Listen for cart update events
+      salla.event.on("cart::quantity.updated", () => {
+        setTimeout(() => this.loadCartData(), 500);
+      });
 
+      salla.event.on("cart::item.deleted", () => {
+        setTimeout(() => this.loadCartData(), 500);
+      });
+
+      salla.event.on("cart::updated", () => {
+        setTimeout(() => this.loadCartData(), 500);
+      });
+    }
+
+    // Listen for clicks on delete buttons
     document.addEventListener("click", (e) => {
       if (
         e.target.closest(".btn--delete") &&
         e.target.closest('form[id^="item-"]')
       ) {
-        setTimeout(() => this.loadCartData(), 1000);
+        setTimeout(() => this.loadCartData(), 1500);
       }
     });
   }
@@ -699,11 +598,9 @@ class FloatingCart {
   }
 }
 
-
 document.addEventListener("DOMContentLoaded", () => {
   window.floatingCart = new FloatingCart();
 });
-
 
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", () => {
