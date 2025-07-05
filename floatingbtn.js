@@ -1,216 +1,255 @@
-class FloatingCart {
+class FloatingCartSidebar {
   constructor() {
     this.isOpen = false;
-    this.cartData = [];
-    this.productData = new Map();
     this.init();
   }
 
   init() {
+    this.createFloatingSidebar();
     this.bindEvents();
-    this.loadCartData();
-    this.observeCartChanges();
+    this.loadCartContent();
+  }
+
+  createFloatingSidebar() {
+    // Create the floating sidebar container
+    const sidebar = document.createElement("div");
+    sidebar.id = "floating-cart-sidebar";
+    sidebar.style.cssText = `
+      position: fixed;
+      top: 0;
+      right: -100%;
+      width: 90%;
+      max-width: 600px;
+      height: 100vh;
+      background: white;
+      box-shadow: -10px 0 30px rgba(0,0,0,0.3);
+      z-index: 9999;
+      transition: right 0.3s ease;
+      overflow-y: auto;
+      font-family: 'DINNextLTArabic-Regular', sans-serif;
+      direction: rtl;
+    `;
+
+    // Create header
+    const header = document.createElement("div");
+    header.style.cssText = `
+      padding: 20px;
+      border-bottom: 1px solid #e5e7eb;
+      background: white;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    `;
+
+    header.innerHTML = `
+      <h2 style="margin: 0; font-size: 20px; font-weight: bold;">سلة المشتريات</h2>
+      <button id="close-floating-cart" style="
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #666;
+        padding: 5px;
+        border-radius: 4px;
+        transition: background 0.2s;
+      " onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background='none'">
+        <i class="sicon-close"></i>
+      </button>
+    `;
+
+    // Create content container
+    const content = document.createElement("div");
+    content.id = "floating-cart-content";
+    content.style.cssText = `
+      padding: 20px;
+      min-height: calc(100vh - 80px);
+    `;
+
+    sidebar.appendChild(header);
+    sidebar.appendChild(content);
+    document.body.appendChild(sidebar);
+
+    // Create overlay
+    const overlay = document.createElement("div");
+    overlay.id = "floating-cart-overlay";
+    overlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 9998;
+      display: none;
+      transition: opacity 0.3s ease;
+    `;
+    document.body.appendChild(overlay);
   }
 
   bindEvents() {
+    // Cart button click
     const cartButton = document.getElementById("cart-button");
-    const closeCart = document.getElementById("close-cart");
-    const overlay = document.getElementById("cart-overlay");
+    if (cartButton) {
+      cartButton.addEventListener("click", () => this.toggleSidebar());
+    }
 
-    cartButton?.addEventListener("click", () => this.toggleCart());
-    closeCart?.addEventListener("click", () => this.closeCart());
-    overlay?.addEventListener("click", () => this.closeCart());
+    // Close button click
+    document.addEventListener("click", (e) => {
+      if (e.target.id === "close-floating-cart") {
+        this.closeSidebar();
+      }
+    });
 
+    // Overlay click
+    const overlay = document.getElementById("floating-cart-overlay");
+    if (overlay) {
+      overlay.addEventListener("click", () => this.closeSidebar());
+    }
+
+    // Escape key
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape" && this.isOpen) {
-        this.closeCart();
+        this.closeSidebar();
       }
     });
   }
 
-  toggleCart() {
+  toggleSidebar() {
     if (this.isOpen) {
-      this.closeCart();
+      this.closeSidebar();
     } else {
-      this.openCart();
+      this.openSidebar();
     }
   }
 
-  openCart() {
-    const drawer = document.getElementById("cart-drawer");
-    const overlay = document.getElementById("cart-overlay");
+  openSidebar() {
+    const sidebar = document.getElementById("floating-cart-sidebar");
+    const overlay = document.getElementById("floating-cart-overlay");
 
-    this.isOpen = true;
-    overlay.style.display = "block";
-    drawer.style.transform = "translateX(0)";
-    drawer.classList.add("floating-cart-slide-in");
+    if (sidebar && overlay) {
+      this.isOpen = true;
+      overlay.style.display = "block";
+      setTimeout(() => {
+        overlay.style.opacity = "1";
+        sidebar.style.right = "0";
+      }, 10);
 
-    document.body.style.overflow = "hidden";
+      // Prevent body scroll
+      document.body.style.overflow = "hidden";
 
-    this.loadCartData();
-  }
-
-  closeCart() {
-    const drawer = document.getElementById("cart-drawer");
-    const overlay = document.getElementById("cart-overlay");
-
-    this.isOpen = false;
-    drawer.style.transform = "translateX(100%)";
-    overlay.style.display = "none";
-    drawer.classList.remove("floating-cart-slide-in");
-
-    document.body.style.overflow = "";
-  }
-
-  async loadCartData() {
-    try {
-      this.showLoading();
-
-      const cartItems = this.extractCartItemsFromDOM();
-      console.log("Found cart items:", cartItems.length);
-
-      if (cartItems.length === 0) {
-        const sallaCartCount = this.getSallaCartCount();
-        console.log("Salla cart count:", sallaCartCount);
-
-        if (sallaCartCount === 0) {
-          this.showEmptyCart();
-          this.updateCartCount(0);
-        } else {
-          this.showCartLoadError();
-          this.updateCartCount(sallaCartCount);
-        }
-        return;
-      }
-
-      this.cartData = cartItems.map((item) => ({
-        ...item,
-        productData: {
-          id: item.productId || item.cartItemId,
-          name: item.title,
-          image: { url: item.image },
-          price: item.price,
-          currency: "SAR",
-        },
-      }));
-
-      this.renderCartItems();
-      this.updateCartCount(this.getTotalQuantity());
-      this.updateCartTotal();
-      this.showCartContent();
-    } catch (error) {
-      console.error("Error loading cart data:", error);
-      this.showEmptyCart();
+      // Refresh cart content
+      this.loadCartContent();
     }
   }
 
-  extractCartItemsFromDOM() {
-    const cartItems = [];
+  closeSidebar() {
+    const sidebar = document.getElementById("floating-cart-sidebar");
+    const overlay = document.getElementById("floating-cart-overlay");
 
-    // Look for cart forms like in cart.html: <form id="item-{cartItemId}">
+    if (sidebar && overlay) {
+      this.isOpen = false;
+      overlay.style.opacity = "0";
+      sidebar.style.right = "-100%";
+
+      setTimeout(() => {
+        overlay.style.display = "none";
+      }, 300);
+
+      // Restore body scroll
+      document.body.style.overflow = "";
+    }
+  }
+
+  loadCartContent() {
+    const content = document.getElementById("floating-cart-content");
+    if (!content) return;
+
+    // Extract cart data from the main cart page structure
+    const cartData = this.extractCartData();
+
+    if (cartData.items.length === 0) {
+      content.innerHTML = this.getEmptyCartHTML();
+      this.updateCartCount(0);
+      return;
+    }
+
+    content.innerHTML = this.getCartHTML(cartData);
+    this.updateCartCount(cartData.totalQuantity);
+    this.bindCartEvents();
+  }
+
+  extractCartData() {
     const cartForms = document.querySelectorAll('form[id^="item-"]');
+    const items = [];
+    let totalQuantity = 0;
+    let totalPrice = 0;
 
     cartForms.forEach((form) => {
       try {
         const cartItemId = form.id.replace("item-", "");
-
-        // Get hidden input with cart item ID
         const hiddenInput = form.querySelector('input[name="id"]');
+
         if (!hiddenInput || hiddenInput.value !== cartItemId) return;
 
-        // Get product details exactly as shown in cart.html
-        const imageElement = form.querySelector("img");
-        const titleElement = form.querySelector("h1 a, .product-title a");
-        const priceElement = form.querySelector(".item-price");
-        const totalElement = form.querySelector(".item-total");
-        const quantityInput = form.querySelector(
-          'input[name="quantity"], salla-quantity-input'
+        // Extract item data
+        const img = form.querySelector("img");
+        const titleLink = form.querySelector("h1 a");
+        const priceSpan = form.querySelector(".item-price");
+        const totalSpan = form.querySelector(".item-total");
+        const quantityInput = form.querySelector("salla-quantity-input");
+
+        if (!quantityInput || !priceSpan) return;
+
+        const quantity = parseInt(quantityInput.getAttribute("value")) || 1;
+        const price = this.extractPrice(priceSpan.textContent);
+        const total = this.extractPrice(
+          totalSpan?.textContent || priceSpan.textContent
         );
-        const linkElement = form.querySelector('a[href*="/ar/"]');
 
-        if (!quantityInput || !priceElement) return;
-
-        // Extract quantity value
-        let quantity = 1;
-        if (quantityInput.tagName === "SALLA-QUANTITY-INPUT") {
-          quantity = parseInt(quantityInput.getAttribute("value")) || 1;
-        } else {
-          quantity = parseInt(quantityInput.value) || 1;
-        }
-
-        // Extract product ID from URL
-        let productId = null;
-        if (linkElement) {
-          const urlMatch = linkElement.href.match(/\/ar\/([^\/]+)$/);
-          if (urlMatch) {
-            productId = this.getProductIdFromSlug(urlMatch[1]);
-          }
-        }
-
-        // Get image source (prefer data-src over src)
-        let imageSrc = "";
-        if (imageElement) {
-          imageSrc =
-            imageElement.getAttribute("data-src") || imageElement.src || "";
-        }
-
-        cartItems.push({
-          cartItemId,
-          productId,
+        items.push({
+          id: cartItemId,
+          title: titleLink?.textContent?.trim() || "",
+          image: img?.src || img?.getAttribute("data-src") || "",
+          link: titleLink?.href || "#",
           quantity: quantity,
-          price: this.extractPrice(priceElement.textContent),
-          total: this.extractPrice(
-            totalElement?.textContent || priceElement.textContent
-          ),
-          title: titleElement?.textContent?.trim() || "",
-          image: imageSrc,
-          link: linkElement?.href || "",
+          price: price,
+          total: total,
         });
+
+        totalQuantity += quantity;
+        totalPrice += total;
       } catch (error) {
         console.error("Error extracting cart item:", error);
       }
     });
 
-    console.log("Extracted cart items:", cartItems);
-    return cartItems;
-  }
-
-  getProductIdFromSlug(slug) {
-    const slugToIdMap = {
-      PdvYWyr: "29587259",
-      onDxBPZ: "1045891903",
-      NKynRrK: "1821043774",
-      NKynXlr: "1449428756",
+    return {
+      items,
+      totalQuantity,
+      totalPrice,
     };
-
-    return slugToIdMap[slug] || slug;
   }
 
-  renderCartItems() {
-    const container = document.getElementById("cart-items");
-    if (!container) return;
-
-    const itemsHTML = this.cartData
-      .map((item) => this.createCartItemHTML(item))
-      .join("");
-    container.innerHTML = itemsHTML;
-  }
-
-  createCartItemHTML(item) {
-    const product = item.productData;
-
-    return `
-      <form id="item-${item.cartItemId}">
+  getCartHTML(cartData) {
+    const itemsHTML = cartData.items
+      .map(
+        (item) => `
+      <form onchange="salla.form.onChange('cart.updateItem', event)" id="floating-item-${
+        item.id
+      }">
         <section class="cart-item bg-storeBG p-5 xs:p-7 rounded-md mb-5 relative border border-primary">
-          <input type="hidden" name="id" value="${item.cartItemId}">
+          <input type="hidden" name="id" value="${item.id}">
 
           <!-- product -->
           <div class="md:flex rtl:space-x-reverse md:space-x-12 items-start justify-between mb-8 last:mb-0">
             <div class="flex flex-1 rtl:space-x-reverse space-x-4">
               <a href="${item.link}" class="shrink-0">
-                <img 
-                  src="${product.image?.url || item.image || ""}" 
-                  alt="${product.name || item.title}"
+                <img
+                  src="${item.image}"
+                  alt="${item.title}"
                   class="flex-none w-24 h-20 border border-gray-200 bg-gray-100 rounded-md object-center object-cover"
                   loading="lazy"
                   onerror="this.style.display='none'"
@@ -219,13 +258,8 @@ class FloatingCart {
 
               <div class="space-y-1">
                 <h1 class="text-store-text-primary leading-6 text-lg">
-                  <a href="${item.link}" class="text-base">${
-      product.name || item.title
-    }</a>
+                  <a href="${item.link}" class="text-base">${item.title}</a>
                 </h1>
-                <span class="text-sm text-store-text-secondary line-through item-regular-price hidden">${this.formatPrice(
-                  item.price
-                )} <i class="sicon-sar"></i></span>
                 <span class="item-price text-sm text-store-text-secondary">${this.formatPrice(
                   item.price
                 )} <i class="sicon-sar"></i></span>
@@ -233,18 +267,16 @@ class FloatingCart {
                   الوزن
                   <span>٠٫١١ كجم</span>
                 </p>
-                <i class="sicon-discount-calculator text-store-text-secondary offer-icon hidden"></i>
-                <span class="text-sm text-store-text-secondary offer-name hidden"></span>
               </div>
             </div>
 
             <div class="flex-1 border-t border-b border-gray-200 py-3 md:p-0 md:border-none mt-5 md:mt-0 flex justify-between items-center md:items-start">
-              <salla-quantity-input 
-                cart-item-id="${item.cartItemId}" 
-                max="" 
-                class="transition transition-color duration-300" 
-                value="${item.quantity}" 
-                name="quantity" 
+              <salla-quantity-input
+                cart-item-id="${item.id}"
+                max=""
+                class="transition transition-color duration-300"
+                value="${item.quantity}"
+                name="quantity"
                 aria-label="Quantity">
               </salla-quantity-input>
               
@@ -258,91 +290,123 @@ class FloatingCart {
           </div>
 
           <span class="absolute top-1.5 rtl:left-1.5 ltr:right-1.5 rtl:xs:left-5 ltr:xs:right-5 xs:top-5">
-            <salla-button 
-              type="button" 
-              shape="icon" 
-              size="small" 
-              color="danger" 
-              class="btn--delete" 
+            <salla-button
+              type="button"
+              shape="icon"
+              size="small"
+              color="danger"
+              class="btn--delete"
               onclick="salla.cart.deleteItem(${
-                item.cartItemId
-              }).then(() => document.querySelector('#item-${
-      item.cartItemId
-    }').remove())" 
-              aria-label="Remove from the cart"
-            >
+                item.id
+              }).then(() => { document.querySelector('#floating-item-${
+          item.id
+        }').remove(); floatingCartSidebar.loadCartContent(); })"
+              aria-label="Remove from the cart">
               <i class="sicon-cancel"></i>
             </salla-button>
           </span>
         </section>
       </form>
+    `
+      )
+      .join("");
+
+    return `
+      <div class="flex flex-col items-start lg:flex-row pb-6 lg:pb-20">
+        <div class="main-content flex-1 w-full">
+          ${itemsHTML}
+        </div>
+        
+        <!-- sidebar -->
+        <div class="sticky top-24 w-full lg:w-96 rtl:lg:mr-8 ltr:lg:ml-8">
+          <div class="shadow-default bg-storeBG p-5 xs:p-7 rounded-md mb-5 relative transition-height duration-1000">
+            <h4 class="font-bold text-sm mb-5 text-store-text-primary">ملخص الطلب</h4>
+
+            <div class="flex justify-between text-sm mb-5">
+              <span class="text-store-text-secondary">مجموع المنتجات</span>
+              <b id="floating-sub-total" class="text-store-text-primary">${this.formatPrice(
+                cartData.totalPrice
+              )} <i class="sicon-sar"></i></b>
+            </div>
+            
+            <div class="flex justify-between text-lg mb-5">
+              <span class="text-store-text-secondary">الإجمالي</span>
+              <b class="text-store-text-primary" id="floating-cart-total">${this.formatPrice(
+                cartData.totalPrice
+              )} <i class="sicon-sar"></i></b>
+            </div>
+
+            <div class="cart-submit-wrap">
+              <salla-button id="floating-cart-submit" loader-position="center" width="wide" onclick="window.location.href='https://oudnna.com/ar/cart'">
+                عرض السلة الكاملة
+              </salla-button>
+            </div>
+          </div>
+        </div>
+      </div>
     `;
   }
 
-  async updateQuantity(cartItemId, newQuantity) {
-    if (newQuantity < 1) return;
+  getEmptyCartHTML() {
+    return `
+      <div style="text-align: center; padding: 60px 20px; color: #666;">
+        <div style="
+          width: 80px;
+          height: 80px;
+          background-color: #f3f4f6;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin: 0 auto 20px;
+        ">
+          <i class="sicon-cart" style="font-size: 32px; color: #9ca3af;"></i>
+        </div>
+        <h3 style="font-size: 18px; font-weight: 600; margin: 0 0 10px 0; color: #111827;">
+          سلة المشتريات فارغة
+        </h3>
+        <p style="margin: 0 0 20px 0; font-size: 14px;">
+          ابدأ بإضافة بعض المنتجات إلى سلتك
+        </p>
+        <button onclick="floatingCartSidebar.closeSidebar()" style="
+          background-color: #000000;
+          color: #ffffff;
+          padding: 10px 20px;
+          border: none;
+          border-radius: 6px;
+          font-size: 14px;
+          cursor: pointer;
+          transition: background 0.2s;
+        " onmouseover="this.style.backgroundColor='#333'" onmouseout="this.style.backgroundColor='#000'">
+          متابعة التسوق
+        </button>
+      </div>
+    `;
+  }
 
-    try {
-      // Find the form element
-      const formElement = document.querySelector(`#item-${cartItemId}`);
-      if (formElement) {
-        // Look for salla-quantity-input component
-        const quantityComponent = formElement.querySelector(
-          `salla-quantity-input[cart-item-id="${cartItemId}"]`
-        );
-        if (quantityComponent) {
-          quantityComponent.setAttribute("value", newQuantity);
-
-          // Trigger Salla's form change event
-          const changeEvent = new Event("change", { bubbles: true });
-          if (
-            typeof salla !== "undefined" &&
-            salla.form &&
-            salla.form.onChange
-          ) {
-            salla.form.onChange("cart.updateItem", changeEvent);
-          }
-        }
+  bindCartEvents() {
+    // Listen for quantity changes
+    document.addEventListener("change", (e) => {
+      if (
+        e.target.closest("salla-quantity-input") &&
+        e.target.closest("#floating-cart-sidebar")
+      ) {
+        setTimeout(() => {
+          this.loadCartContent();
+        }, 1000);
       }
+    });
 
-      // Refresh cart data after a short delay
-      setTimeout(() => {
-        this.loadCartData();
-        this.showPulseAnimation();
-      }, 1000);
-    } catch (error) {
-      console.error("Error updating quantity:", error);
+    // Listen for Salla cart events
+    if (typeof salla !== "undefined") {
+      salla.event.on("cart::updated", () => {
+        setTimeout(() => this.loadCartContent(), 500);
+      });
+
+      salla.event.on("cart::item.deleted", () => {
+        setTimeout(() => this.loadCartContent(), 500);
+      });
     }
-  }
-
-  async removeItem(cartItemId) {
-    try {
-      // Use Salla's cart delete function exactly as in cart.html
-      if (typeof salla !== "undefined" && salla.cart && salla.cart.deleteItem) {
-        await salla.cart.deleteItem(cartItemId).then(() => {
-          const itemElement = document.querySelector(`#item-${cartItemId}`);
-          if (itemElement) {
-            itemElement.remove();
-          }
-        });
-      }
-
-      // Refresh cart data
-      setTimeout(() => {
-        this.loadCartData();
-        this.showPulseAnimation();
-      }, 500);
-    } catch (error) {
-      console.error("Error removing item:", error);
-    }
-  }
-
-  getTotalQuantity() {
-    return this.cartData.reduce((total, item) => total + item.quantity, 0);
-  }
-
-  getTotalPrice() {
-    return this.cartData.reduce((total, item) => total + item.total, 0);
   }
 
   updateCartCount(count) {
@@ -350,111 +414,6 @@ class FloatingCart {
     if (countElement) {
       countElement.textContent = count;
       countElement.style.display = count > 0 ? "flex" : "none";
-    }
-  }
-
-  updateCartTotal() {
-    const totalElement = document.getElementById("cart-total");
-    const subtotalElement = document.getElementById("cart-subtotal");
-
-    if (totalElement) {
-      totalElement.textContent = `${this.formatPrice(
-        this.getTotalPrice()
-      )} ر.س`;
-    }
-
-    if (subtotalElement) {
-      subtotalElement.textContent = `${this.formatPrice(
-        this.getTotalPrice()
-      )} ر.س`;
-    }
-  }
-
-  showLoading() {
-    const loading = document.getElementById("cart-loading");
-    const empty = document.getElementById("cart-empty");
-    const footer = document.getElementById("cart-footer");
-
-    if (loading) loading.style.display = "flex";
-    if (empty) empty.style.display = "none";
-    if (footer) footer.style.display = "none";
-  }
-
-  showEmptyCart() {
-    const loading = document.getElementById("cart-loading");
-    const empty = document.getElementById("cart-empty");
-    const footer = document.getElementById("cart-footer");
-    const items = document.getElementById("cart-items");
-
-    if (loading) loading.style.display = "none";
-    if (empty) empty.style.display = "block";
-    if (footer) footer.style.display = "none";
-    if (items) items.innerHTML = "";
-  }
-
-  showCartContent() {
-    const loading = document.getElementById("cart-loading");
-    const empty = document.getElementById("cart-empty");
-    const footer = document.getElementById("cart-footer");
-
-    if (loading) loading.style.display = "none";
-    if (empty) empty.style.display = "none";
-    if (footer) footer.style.display = "block";
-  }
-
-  showCartLoadError() {
-    const loading = document.getElementById("cart-loading");
-    const empty = document.getElementById("cart-empty");
-    const footer = document.getElementById("cart-footer");
-    const items = document.getElementById("cart-items");
-
-    if (loading) loading.style.display = "none";
-    if (empty) empty.style.display = "none";
-    if (footer) footer.style.display = "block";
-
-    if (items) {
-      items.innerHTML = `
-        <div style="text-align: center; padding: 48px 24px; color: #6b7280;">
-          <div style="
-            width: 64px;
-            height: 64px;
-            background-color: #f3f4f6;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 16px;
-          ">
-            <i class="sicon-refresh" style="font-size: 24px; color: #9ca3af;"></i>
-          </div>
-          <h3 style="
-            font-size: 16px;
-            font-weight: 600;
-            margin: 0 0 8px 0;
-            color: #111827;
-          ">
-            عذراً، لا يمكن تحميل تفاصيل السلة
-          </h3>
-          <p style="margin: 0 0 16px 0; font-size: 14px;">
-            يرجى الانتقال إلى صفحة السلة لعرض المنتجات
-          </p>
-          <button 
-            onclick="window.location.href='https://oudnna.com/ar/cart'"
-            style="
-              background-color: #000000;
-              color: #ffffff;
-              padding: 8px 16px;
-              border: none;
-              border-radius: 6px;
-              font-size: 14px;
-              cursor: pointer;
-              transition: all 0.2s ease;
-            "
-          >
-            عرض السلة
-          </button>
-        </div>
-      `;
     }
   }
 
@@ -470,144 +429,20 @@ class FloatingCart {
   formatPrice(price) {
     return new Intl.NumberFormat("ar-SA").format(price);
   }
-
-  showPulseAnimation() {
-    const cartButton = document.getElementById("cart-button");
-    const pulseRing = document.getElementById("pulse-ring");
-
-    if (cartButton && pulseRing) {
-      cartButton.classList.add("floating-cart-bounce");
-      pulseRing.style.display = "block";
-      pulseRing.classList.add("floating-cart-pulse");
-
-      setTimeout(() => {
-        cartButton.classList.remove("floating-cart-bounce");
-        pulseRing.style.display = "none";
-        pulseRing.classList.remove("floating-cart-pulse");
-      }, 600);
-    }
-  }
-
-  observeCartChanges() {
-    const cartContainer = document.querySelector(".main-content");
-    if (cartContainer) {
-      const observer = new MutationObserver((mutations) => {
-        let shouldUpdate = false;
-
-        mutations.forEach((mutation) => {
-          if (mutation.type === "childList") {
-            mutation.addedNodes.forEach((node) => {
-              if (
-                node.nodeType === Node.ELEMENT_NODE &&
-                ((node.matches && node.matches('form[id^="item-"]')) ||
-                  node.querySelector('form[id^="item-"]'))
-              ) {
-                shouldUpdate = true;
-              }
-            });
-
-            mutation.removedNodes.forEach((node) => {
-              if (
-                node.nodeType === Node.ELEMENT_NODE &&
-                ((node.matches && node.matches('form[id^="item-"]')) ||
-                  node.querySelector('form[id^="item-"]'))
-              ) {
-                shouldUpdate = true;
-              }
-            });
-          }
-        });
-
-        if (shouldUpdate) {
-          setTimeout(() => this.loadCartData(), 500);
-        }
-      });
-
-      observer.observe(cartContainer, {
-        childList: true,
-        subtree: true,
-      });
-    }
-
-    // Listen for Salla form changes
-    document.addEventListener("change", (e) => {
-      if (
-        e.target.closest("salla-quantity-input") ||
-        e.target.matches('input[name="quantity"]')
-      ) {
-        setTimeout(() => this.loadCartData(), 1000);
-      }
-    });
-
-    // Listen for Salla cart events
-    if (typeof salla !== "undefined") {
-      // Listen for cart update events
-      salla.event.on("cart::quantity.updated", () => {
-        setTimeout(() => this.loadCartData(), 500);
-      });
-
-      salla.event.on("cart::item.deleted", () => {
-        setTimeout(() => this.loadCartData(), 500);
-      });
-
-      salla.event.on("cart::updated", () => {
-        setTimeout(() => this.loadCartData(), 500);
-      });
-    }
-
-    // Listen for clicks on delete buttons
-    document.addEventListener("click", (e) => {
-      if (
-        e.target.closest(".btn--delete") &&
-        e.target.closest('form[id^="item-"]')
-      ) {
-        setTimeout(() => this.loadCartData(), 1500);
-      }
-    });
-  }
-
-  getSallaCartCount() {
-    try {
-      const cartSummary = document.querySelector("salla-cart-summary");
-      if (cartSummary && cartSummary.getAttribute("count")) {
-        return parseInt(cartSummary.getAttribute("count")) || 0;
-      }
-
-      const cartBadge = document.querySelector(
-        ".cart-badge, [data-cart-count]"
-      );
-      if (cartBadge) {
-        const count =
-          cartBadge.textContent.trim() ||
-          cartBadge.getAttribute("data-cart-count");
-        return parseInt(count) || 0;
-      }
-
-      const headerCart = document.querySelector(
-        ".header-cart .count, .cart-count"
-      );
-      if (headerCart) {
-        return parseInt(headerCart.textContent) || 0;
-      }
-
-      return 0;
-    } catch (error) {
-      console.error("Error getting Salla cart count:", error);
-      return 0;
-    }
-  }
 }
 
+// Initialize when DOM is ready
 document.addEventListener("DOMContentLoaded", () => {
-  window.floatingCart = new FloatingCart();
+  window.floatingCartSidebar = new FloatingCartSidebar();
 });
 
+// Also initialize immediately if DOM is already loaded
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", () => {
-    if (!window.floatingCart) {
-      window.floatingCart = new FloatingCart();
+    if (!window.floatingCartSidebar) {
+      window.floatingCartSidebar = new FloatingCartSidebar();
     }
   });
 } else {
-  window.floatingCart = new FloatingCart();
+  window.floatingCartSidebar = new FloatingCartSidebar();
 }
