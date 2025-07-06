@@ -70,3 +70,94 @@
     if (++attempts > 100) clearInterval(interval);
   }, 200);
 })();
+
+
+// Timer
+
+(function () {
+  const TIMER_KEY = 'daily_offer_timer_start';
+
+  function getSaudiMidnightTimestamp() {
+    const now = new Date();
+    const saOffset = 3 * 60 * 60 * 1000;
+    const localMidnight = new Date(now);
+    localMidnight.setUTCHours(21, 0, 0, 0);
+    return localMidnight.getTime();
+  }
+
+  function getOrCreateTimerEndTime() {
+    const now = Date.now();
+    let start = localStorage.getItem(TIMER_KEY);
+
+    if (!start || now - Number(start) > 24 * 60 * 60 * 1000) {
+      const todayStart = getSaudiMidnightTimestamp();
+      localStorage.setItem(TIMER_KEY, todayStart);
+      return todayStart + 24 * 60 * 60 * 1000;
+    }
+
+    return Number(start) + 24 * 60 * 60 * 1000;
+  }
+
+  function createCountdownElement() {
+    const container = document.createElement('div');
+    container.className = 'countdown-timer';
+    container.innerHTML = `
+      <div class="timer-label">العرض ينتهي خلال:</div>
+      <div class="timer-values">
+        <span class="hours">00</span> : 
+        <span class="minutes">00</span> : 
+        <span class="seconds">00</span>
+      </div>
+    `;
+    return container;
+  }
+
+  function updateCountdown(endTime, element) {
+    const now = Date.now();
+    const diff = endTime - now;
+    if (diff <= 0) return false;
+
+    const totalSeconds = Math.floor(diff / 1000);
+    const hours = Math.floor((totalSeconds % (3600 * 24)) / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    element.querySelector('.hours').textContent = String(hours).padStart(2, '0');
+    element.querySelector('.minutes').textContent = String(minutes).padStart(2, '0');
+    element.querySelector('.seconds').textContent = String(seconds).padStart(2, '0');
+    return true;
+  }
+
+  const interval = setInterval(() => {
+    const product = document.querySelector('.product-single__inner');
+    const priceWithDiscount = document.querySelector('.before-price');
+
+    if (product && priceWithDiscount && !document.querySelector('.countdown-timer')) {
+      const timer = createCountdownElement();
+      const target = document.querySelector('.product-price') || document.querySelector('.inventory-content');
+      const endTime = getOrCreateTimerEndTime();
+
+      if (target) {
+        target.parentNode.insertBefore(timer, target.nextSibling);
+
+        const tick = () => {
+          const active = updateCountdown(endTime, timer);
+          if (!active) {
+            timer.remove();
+            localStorage.removeItem(TIMER_KEY);
+            clearInterval(timerInterval);
+          }
+        };
+
+        tick(); 
+        const timerInterval = setInterval(tick, 1000);
+      }
+
+      clearInterval(interval);
+    }
+
+    if (++tries > 50) clearInterval(interval);
+  }, 300);
+
+  let tries = 0;
+})();
