@@ -74,25 +74,25 @@
 //==========================================================================
 // Timer
 //==========================================================================
+
 (function () {
   const TIMER_KEY = 'daily_offer_timer_start';
 
   function getSaudiMidnightTimestamp() {
     const now = new Date();
-    now.setUTCHours(21, 0, 0, 0); 
+    now.setUTCHours(21, 0, 0, 0);
     return now.getTime();
   }
 
   function getOrCreateTimerEndTime() {
     const now = Date.now();
     let start = localStorage.getItem(TIMER_KEY);
-
     if (!start || now - Number(start) > 86400000) {
       const todayStart = getSaudiMidnightTimestamp();
       localStorage.setItem(TIMER_KEY, todayStart);
+      console.log('[Countdown] New start time set:', todayStart);
       return todayStart + 86400000;
     }
-
     return Number(start) + 86400000;
   }
 
@@ -107,6 +107,7 @@
         <span class="seconds">00</span>
       </div>
     `;
+    console.log('[Countdown] Timer element created');
     return container;
   }
 
@@ -114,43 +115,46 @@
     const now = Date.now();
     const diff = endTime - now;
     if (diff <= 0) return false;
-
     const totalSeconds = Math.floor(diff / 1000);
     const hours = Math.floor((totalSeconds % 86400) / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const seconds = totalSeconds % 60;
-
     element.querySelector('.hours').textContent = String(hours).padStart(2, '0');
     element.querySelector('.minutes').textContent = String(minutes).padStart(2, '0');
     element.querySelector('.seconds').textContent = String(seconds).padStart(2, '0');
     return true;
   }
 
-  let tries = 0;
+  let attempts = 0;
   const interval = setInterval(() => {
     const container = document.querySelector('.product-single__inner');
+    const promo = document.querySelector('.promotion-title');
     const priceBox = document.querySelector('.product-price');
-    const promoExists = document.querySelector('.promotion-title');
 
-    if (container && priceBox && promoExists && !document.querySelector('.countdown-timer')) {
-      const timer = createCountdownElement();
-      priceBox.parentNode.insertBefore(timer, priceBox.nextSibling);
-
-      const endTime = getOrCreateTimerEndTime();
-      const tick = () => {
-        const active = updateCountdown(endTime, timer);
-        if (!active) {
-          timer.remove();
-          localStorage.removeItem(TIMER_KEY);
-          clearInterval(loop);
-        }
-      };
-
-      tick();
-      const loop = setInterval(tick, 1000);
+    if (container && promo && priceBox) {
+      if (!document.querySelector('.countdown-timer')) {
+        console.log('[Countdown] Required elements found, injecting timer');
+        const timer = createCountdownElement();
+        priceBox.parentNode.insertBefore(timer, priceBox.nextSibling);
+        const endTime = getOrCreateTimerEndTime();
+        const tick = () => {
+          const active = updateCountdown(endTime, timer);
+          if (!active) {
+            timer.remove();
+            localStorage.removeItem(TIMER_KEY);
+            console.log('[Countdown] Timer ended and removed');
+            clearInterval(loop);
+          }
+        };
+        tick();
+        const loop = setInterval(tick, 1000);
+      }
       clearInterval(interval);
     }
 
-    if (++tries > 80) clearInterval(interval);
+    if (++attempts > 150) {
+      console.log('[Countdown] Max attempts reached, stopping');
+      clearInterval(interval);
+    }
   }, 300);
 })();
