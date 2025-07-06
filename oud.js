@@ -74,10 +74,8 @@
 //==========================================================================
 // Timer
 //==========================================================================
-<script>
 (function () {
   const TIMER_KEY = 'daily_offer_timer_start';
-  const SAUDI_OFFSET = 3 * 60 * 60 * 1000;
 
   function getSaudiMidnightTimestamp() {
     const now = new Date();
@@ -128,13 +126,13 @@
     return true;
   }
 
-  let attempts = 0;
+  let tries = 0;
   const interval = setInterval(() => {
     const container = document.querySelector('.product-single__inner');
     const priceBox = document.querySelector('.product-price');
-    const discounted = document.querySelector('.before-price');
+    const promoExists = document.querySelector('.promotion-title');
 
-    if (container && priceBox && discounted && !document.querySelector('.countdown-timer')) {
+    if (container && priceBox && promoExists && !document.querySelector('.countdown-timer')) {
       const timer = createCountdownElement();
       priceBox.parentNode.insertBefore(timer, priceBox.nextSibling);
 
@@ -153,6 +151,6 @@
       clearInterval(interval);
     }
 
-    if (++attempts > 80) clearInterval(interval);
+    if (++tries > 80) clearInterval(interval);
   }, 300);
 })();
