@@ -140,10 +140,7 @@
     const promo = document.querySelector('.promotion-title');
     const priceBox = document.querySelector('.product-price');
 
-    console.log('[Countdown] Checking elements...', { container, promo, priceBox });
-
     if (container && promo && priceBox && !document.querySelector('.countdown-timer')) {
-      console.log('[Countdown] All elements found, injecting timer...');
       const timer = createCountdownElement();
       priceBox.insertAdjacentElement('afterend', timer);
 
@@ -153,7 +150,6 @@
         if (!active) {
           timer.remove();
           localStorage.removeItem(TIMER_KEY);
-          console.log('[Countdown] Timer ended and removed');
           clearInterval(loop);
         }
       };
@@ -163,7 +159,6 @@
     }
 
     if (++retry > 200) {
-      console.log('[Countdown] Gave up after max attempts');
       clearInterval(waitForProduct);
     }
   }, 500);
