@@ -71,31 +71,31 @@
   }, 200);
 })();
 
-
+//==========================================================================
 // Timer
-
+//==========================================================================
+<script>
 (function () {
   const TIMER_KEY = 'daily_offer_timer_start';
+  const SAUDI_OFFSET = 3 * 60 * 60 * 1000;
 
   function getSaudiMidnightTimestamp() {
     const now = new Date();
-    const saOffset = 3 * 60 * 60 * 1000;
-    const localMidnight = new Date(now);
-    localMidnight.setUTCHours(21, 0, 0, 0);
-    return localMidnight.getTime();
+    now.setUTCHours(21, 0, 0, 0); 
+    return now.getTime();
   }
 
   function getOrCreateTimerEndTime() {
     const now = Date.now();
     let start = localStorage.getItem(TIMER_KEY);
 
-    if (!start || now - Number(start) > 24 * 60 * 60 * 1000) {
+    if (!start || now - Number(start) > 86400000) {
       const todayStart = getSaudiMidnightTimestamp();
       localStorage.setItem(TIMER_KEY, todayStart);
-      return todayStart + 24 * 60 * 60 * 1000;
+      return todayStart + 86400000;
     }
 
-    return Number(start) + 24 * 60 * 60 * 1000;
+    return Number(start) + 86400000;
   }
 
   function createCountdownElement() {
@@ -104,8 +104,8 @@
     container.innerHTML = `
       <div class="timer-label">العرض ينتهي خلال:</div>
       <div class="timer-values">
-        <span class="hours">00</span> : 
-        <span class="minutes">00</span> : 
+        <span class="hours">00</span> :
+        <span class="minutes">00</span> :
         <span class="seconds">00</span>
       </div>
     `;
@@ -118,7 +118,7 @@
     if (diff <= 0) return false;
 
     const totalSeconds = Math.floor(diff / 1000);
-    const hours = Math.floor((totalSeconds % (3600 * 24)) / 3600);
+    const hours = Math.floor((totalSeconds % 86400) / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const seconds = totalSeconds % 60;
 
@@ -128,36 +128,31 @@
     return true;
   }
 
+  let attempts = 0;
   const interval = setInterval(() => {
-    const product = document.querySelector('.product-single__inner');
-    const priceWithDiscount = document.querySelector('.before-price');
+    const container = document.querySelector('.product-single__inner');
+    const priceBox = document.querySelector('.product-price');
+    const discounted = document.querySelector('.before-price');
 
-    if (product && priceWithDiscount && !document.querySelector('.countdown-timer')) {
+    if (container && priceBox && discounted && !document.querySelector('.countdown-timer')) {
       const timer = createCountdownElement();
-      const target = document.querySelector('.product-price') || document.querySelector('.inventory-content');
+      priceBox.parentNode.insertBefore(timer, priceBox.nextSibling);
+
       const endTime = getOrCreateTimerEndTime();
+      const tick = () => {
+        const active = updateCountdown(endTime, timer);
+        if (!active) {
+          timer.remove();
+          localStorage.removeItem(TIMER_KEY);
+          clearInterval(loop);
+        }
+      };
 
-      if (target) {
-        target.parentNode.insertBefore(timer, target.nextSibling);
-
-        const tick = () => {
-          const active = updateCountdown(endTime, timer);
-          if (!active) {
-            timer.remove();
-            localStorage.removeItem(TIMER_KEY);
-            clearInterval(timerInterval);
-          }
-        };
-
-        tick(); 
-        const timerInterval = setInterval(tick, 1000);
-      }
-
+      tick();
+      const loop = setInterval(tick, 1000);
       clearInterval(interval);
     }
 
-    if (++tries > 50) clearInterval(interval);
+    if (++attempts > 80) clearInterval(interval);
   }, 300);
-
-  let tries = 0;
 })();
