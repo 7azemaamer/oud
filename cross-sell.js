@@ -1,4 +1,4 @@
-/* cross-sell.js — hamtaro.sa cross-sell popup | v1.14.0 */
+/* cross-sell.js — hamtaro.sa cross-sell popup | v1.15.0 */
 (function () {
   'use strict';
 
@@ -224,32 +224,21 @@
     var productId = parseInt(btn.getAttribute('data-id'), 10);
     btn.disabled    = true;
     btn.textContent = '...';
-    var sdk = window.salla || window.Salla;
-    var promise = null;
-    if (sdk && sdk.cart) {
-      if      (typeof sdk.cart.addProduct === 'function') promise = sdk.cart.addProduct({ id: productId, quantity: 1 });
-      else if (typeof sdk.cart.add        === 'function') promise = sdk.cart.add({ product_id: productId, quantity: 1 });
-    }
-    if (promise && typeof promise.then === 'function') {
-      promise
-        .then(function () {
-          btn.textContent = '\u062a\u0645\u062a \u0627\u0644\u0625\u0636\u0627\u0641\u0629';
-          btn.classList.add('cs-added');
-          setTimeout(closePopup, 1400);
-        })
-        .catch(function () {
-          btn.disabled    = false;
-          btn.textContent = '\u0623\u0636\u0641 \u0644\u0644\u0633\u0644\u0629';
-        });
-    } else {
-      btn.disabled    = false;
-      btn.textContent = '\u0623\u0636\u0641 \u0644\u0644\u0633\u0644\u0629';
-    }
+    salla.cart.addItem({ id: productId, quantity: 1 })
+      .then(function () {
+        btn.textContent = '\u062a\u0645\u062a \u0627\u0644\u0625\u0636\u0627\u0641\u0629 \u2713';
+        btn.classList.add('cs-added');
+        setTimeout(closePopup, 1400);
+      })
+      .catch(function () {
+        btn.disabled    = false;
+        btn.textContent = '\u0623\u0636\u0641 \u0644\u0644\u0633\u0644\u0629';
+      });
   }
 
   function onCartAdded() {
     if (!activeConfig) return;
-    if (document.getElementById('cs-backdrop')) closePopup();
+    if (document.getElementById('cs-backdrop')) return; // add came from inside our popup — skip
     openPopup(activeConfig);
   }
 
