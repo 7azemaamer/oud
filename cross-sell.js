@@ -1,4 +1,4 @@
-/* cross-sell.js — hamtaro.sa cross-sell popup | v1.11.0 */
+/* cross-sell.js — hamtaro.sa cross-sell popup | v1.13.0 */
 (function () {
   'use strict';
 
@@ -277,35 +277,18 @@
   }
 
   function suppressSallaNativeOffer() {
-    if (!document.getElementById('cs-salla-block')) {
-      var st = document.createElement('style');
-      st.id = 'cs-salla-block';
-      st.textContent = '.s-offer-modal-type-products{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important;}';
-      (document.head || document.documentElement).insertBefore(st, (document.head || document.documentElement).firstChild);
-    }
+    if (document.getElementById('cs-salla-block')) return;
+    var st = document.createElement('style');
+    st.id = 'cs-salla-block';
+    st.textContent = 'salla-modal.s-offer-modal-type-categories,' +
+                     'salla-modal.s-offer-modal-type-products{display:none!important;}';
+    (document.head || document.documentElement).insertBefore(st, (document.head || document.documentElement).firstChild);
 
-    function removeNode(node) {
-      if (node.parentNode) node.parentNode.removeChild(node);
-    }
-
-    // Salla appends modals as direct children of <body> — no subtree scan needed
-    new MutationObserver(function (mutations) {
-      for (var i = 0; i < mutations.length; i++) {
-        var added = mutations[i].addedNodes;
-        for (var j = 0; j < added.length; j++) {
-          var node = added[j];
-          if (node && node.nodeType === 1 && node.matches &&
-              (node.matches('.s-offer-modal-type-products') || node.matches('.s-modal-overlay'))) {
-            removeNode(node);
-          }
-        }
-      }
-    }).observe(document.body, { childList: true });
-
-    // Separate shallow observer just for modal-is-open class on body
+    // Swap modal-is-open → modal-is-closed so Salla re-enables page buttons
     new MutationObserver(function () {
       if (document.body.classList.contains('modal-is-open')) {
         document.body.classList.remove('modal-is-open');
+        document.body.classList.add('modal-is-closed');
       }
     }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
   }
