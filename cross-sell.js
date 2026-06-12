@@ -1,4 +1,4 @@
-/* cross-sell.js — hamtaro.sa cross-sell popup | v1.0.0 */
+/* cross-sell.js — hamtaro.sa cross-sell popup | v1.9.0 */
 (function () {
   'use strict';
 
@@ -124,14 +124,13 @@
 
   function fetchProducts(catId) {
     if (productsCache[catId]) return Promise.resolve(productsCache[catId]);
-    // source_value[] must stay as [] not [0] — URLSearchParams can't do that, build manually
     var url = API_BASE + '/products?source=categories&filterable=1' +
-              '&filters%5Bcategory_id%5D=' + catId +
-              '&source_value%5B%5D=' + catId;
+              '&filters[category_id]=' + catId +
+              '&source_value[0]=' + catId;
     return fetch(url, { method: 'GET', headers: API_HDRS })
       .then(function (r) { return r.json(); })
       .then(function (res) {
-        var items = (res.data && res.data.data) || [];
+        var items = (Array.isArray(res.data) ? res.data : (res.data && res.data.data)) || [];
         productsCache[catId] = items.slice(0, 8);
         return productsCache[catId];
       });
