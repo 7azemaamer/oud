@@ -1,4 +1,4 @@
-/* cross-sell.js — hamtaro.sa cross-sell popup | v1.15.0 */
+/* cross-sell.js — hamtaro.sa cross-sell popup | v1.16.0 */
 (function () {
   'use strict';
 
@@ -228,7 +228,7 @@
       .then(function () {
         btn.textContent = '\u062a\u0645\u062a \u0627\u0644\u0625\u0636\u0627\u0641\u0629 \u2713';
         btn.classList.add('cs-added');
-        setTimeout(closePopup, 1400);
+        btn.disabled = true;
       })
       .catch(function () {
         btn.disabled    = false;
