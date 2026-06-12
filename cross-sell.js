@@ -1,4 +1,4 @@
-/* cross-sell.js — hamtaro.sa cross-sell popup | v1.10.0 */
+/* cross-sell.js — hamtaro.sa cross-sell popup | v1.11.0 */
 (function () {
   'use strict';
 
@@ -288,33 +288,26 @@
       if (node.parentNode) node.parentNode.removeChild(node);
     }
 
-    function purge() {
-      var els = document.querySelectorAll('.s-offer-modal-type-products, .s-modal-overlay');
-      for (var i = 0; i < els.length; i++) removeNode(els[i]);
-      document.body.classList.remove('modal-is-open');
-    }
-
-    purge();
-
+    // Salla appends modals as direct children of <body> — no subtree scan needed
     new MutationObserver(function (mutations) {
-      var needsPurge = false;
       for (var i = 0; i < mutations.length; i++) {
-        var m = mutations[i];
-        if (m.type === 'attributes') { needsPurge = true; break; }
-        var added = m.addedNodes;
+        var added = mutations[i].addedNodes;
         for (var j = 0; j < added.length; j++) {
           var node = added[j];
-          if (!node || node.nodeType !== 1) continue;
-          if (node.matches && (node.matches('.s-offer-modal-type-products') || node.matches('.s-modal-overlay'))) {
+          if (node && node.nodeType === 1 && node.matches &&
+              (node.matches('.s-offer-modal-type-products') || node.matches('.s-modal-overlay'))) {
             removeNode(node);
-          } else if (node.querySelector) {
-            var inner = node.querySelector('.s-offer-modal-type-products, .s-modal-overlay');
-            if (inner) removeNode(inner);
           }
         }
       }
-      if (needsPurge) purge();
-    }).observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+    }).observe(document.body, { childList: true });
+
+    // Separate shallow observer just for modal-is-open class on body
+    new MutationObserver(function () {
+      if (document.body.classList.contains('modal-is-open')) {
+        document.body.classList.remove('modal-is-open');
+      }
+    }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
   }
 
   function onCategoryIds(catIds) {
