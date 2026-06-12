@@ -1,6 +1,9 @@
-<!-- Brrokerme -->
-<style>
-:root {
+/* product-page-refinement.js — hamtaro.sa product page enhancements | v1.0.0 */
+(function () {
+  if (document.getElementById('pe-refinement-styles')) return;
+  var s = document.createElement('style');
+  s.id = 'pe-refinement-styles';
+  s.textContent = `:root {
   --pe-green:        #4CD964;
   --pe-green-dim:    rgba(76,217,100,.12);
   --pe-green-glow:   rgba(76,217,100,.22);
@@ -977,10 +980,10 @@ html:not(.dark) section.sticky-product-bar .text-gray-400 {
     animation: pe-cluster-in-mob .55s cubic-bezier(.4,0,.2,1) 1.2s both,
                pe-cluster-shake-mob 9s ease-in-out 6s infinite;
   }
-}
-</style>
+}`;
+  (document.head || document.documentElement).appendChild(s);
+})();
 
-<script>
 (function () {
   'use strict';
 
@@ -1247,4 +1250,3 @@ html:not(.dark) section.sticky-product-bar .text-gray-400 {
     requestAnimationFrame(function () { requestAnimationFrame(run); });
   }
 })();
-</script>
