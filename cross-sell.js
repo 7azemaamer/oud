@@ -124,12 +124,10 @@
 
   function fetchProducts(catId) {
     if (productsCache[catId]) return Promise.resolve(productsCache[catId]);
-    var url = API_BASE + '/products?' + new URLSearchParams({
-      source: 'categories',
-      filterable: '1',
-      'filters[category_id]': catId,
-      'source_value[0]':      catId,
-    });
+    // source_value[] must stay as [] not [0] — URLSearchParams can't do that, build manually
+    var url = API_BASE + '/products?source=categories&filterable=1' +
+              '&filters%5Bcategory_id%5D=' + catId +
+              '&source_value%5B%5D=' + catId;
     return fetch(url, { method: 'GET', headers: API_HDRS })
       .then(function (r) { return r.json(); })
       .then(function (res) {
@@ -267,8 +265,14 @@
       if (popupTriggered) return;
       var el = e.target.closest('salla-button[quick-buy], button[quick-buy]');
       if (!el) return;
-      console.log('[cs] add-to-cart click detected, waiting 900ms...');
-      setTimeout(onCartAdded, 900);
+      console.log('[cs] add-to-cart click detected, waiting 1500ms...');
+      setTimeout(function () {
+        if (document.querySelector('salla-offer-modal[visible]')) {
+          console.log('[cs] salla native offer modal open — skipping');
+          return;
+        }
+        onCartAdded();
+      }, 1500);
     }, true);
     console.log('[cs] click fallback listener attached');
   }
