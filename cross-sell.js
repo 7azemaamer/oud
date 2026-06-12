@@ -228,19 +228,7 @@
     return false;
   }
 
-  function init() {
-    console.log('[cs] init fired, readyState:', document.readyState);
-    if (!isProductPage()) { console.log('[cs] not a product page — bailing'); return; }
-    console.log('[cs] product page confirmed');
-    var catIds = getPageCategoryIds();
-    console.log('[cs] category ids from dataLayer:', catIds);
-    if (!catIds.length) { console.log('[cs] no category ids found — bailing'); return; }
-    activeConfig = matchConfig(catIds);
-    console.log('[cs] matched config:', activeConfig);
-    if (!activeConfig) { console.log('[cs] no matching cross-sell config — bailing'); return; }
-    fetchProducts(activeConfig.upsellCategory)
-      .then(function (p) { console.log('[cs] pre-fetched', p.length, 'products'); })
-      .catch(function (e) { console.warn('[cs] pre-fetch failed:', e); });
+  function setupListeners() {
     var sdk = window.salla || window.Salla;
     console.log('[cs] sdk:', sdk ? 'found' : 'NOT FOUND');
     if (sdk && sdk.cart && sdk.cart.event) {
@@ -261,6 +249,34 @@
       setTimeout(onCartAdded, 900);
     }, true);
     console.log('[cs] click fallback listener attached');
+  }
+
+  function tryInit(attemptsLeft) {
+    var catIds = getPageCategoryIds();
+    console.log('[cs] category ids from dataLayer:', catIds);
+    if (!catIds.length) {
+      if (attemptsLeft > 0) {
+        console.log('[cs] categories not ready, retrying in 500ms (' + attemptsLeft + ' attempts left)');
+        setTimeout(function () { tryInit(attemptsLeft - 1); }, 500);
+      } else {
+        console.log('[cs] no category ids found after retries — bailing');
+      }
+      return;
+    }
+    activeConfig = matchConfig(catIds);
+    console.log('[cs] matched config:', activeConfig);
+    if (!activeConfig) { console.log('[cs] no matching cross-sell config — bailing'); return; }
+    fetchProducts(activeConfig.upsellCategory)
+      .then(function (p) { console.log('[cs] pre-fetched', p.length, 'products'); })
+      .catch(function (e) { console.warn('[cs] pre-fetch failed:', e); });
+    setupListeners();
+  }
+
+  function init() {
+    console.log('[cs] init fired, readyState:', document.readyState);
+    if (!isProductPage()) { console.log('[cs] not a product page — bailing'); return; }
+    console.log('[cs] product page confirmed');
+    tryInit(4);
   }
 
   if (document.readyState === 'loading') {
