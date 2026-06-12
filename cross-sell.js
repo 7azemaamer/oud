@@ -94,17 +94,30 @@
   var popupTriggered = false;
 
   function getPageCategoryIds() {
+    var ids = [];
+
     var dl = window.dataLayer || [];
     for (var i = 0; i < dl.length; i++) {
       var e = dl[i];
       if (e.event === 'detail' && e.ecommerce && e.ecommerce.detail) {
         var prods = (e.ecommerce.detail.products) || [];
         if (prods.length && prods[0].categories) {
-          return prods[0].categories.map(function (c) { return String(c.id); });
+          ids = prods[0].categories.map(function (c) { return String(c.id); });
         }
+        // referrer category id baked into the dataLayer entry
+        if (e.page && e.page.referrer) {
+          var m = e.page.referrer.match(/[?&]filters(?:%5B|\[)category_id(?:%5D|\])=(\d+)/);
+          if (m && ids.indexOf(m[1]) === -1) ids.push(m[1]);
+        }
+        if (ids.length) return ids;
       }
     }
-    return [];
+
+    // fallback: read from the browser referrer directly
+    var rm = document.referrer.match(/[?&]filters(?:%5B|\[)category_id(?:%5D|\])=(\d+)/);
+    if (rm) ids.push(rm[1]);
+
+    return ids;
   }
 
   function matchConfig(catIds) {
