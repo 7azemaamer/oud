@@ -248,33 +248,37 @@
     return false;
   }
 
-  function setupListeners() {
-    var sdk = window.salla || window.Salla;
-    console.log('[cs] sdk:', sdk ? 'found' : 'NOT FOUND');
-    if (sdk && sdk.cart && sdk.cart.event) {
-      if (typeof sdk.cart.event.onAdded === 'function') {
-        sdk.cart.event.onAdded(function () { console.log('[cs] salla cart.event.onAdded fired'); onCartAdded(); });
-        console.log('[cs] hooked into sdk.cart.event.onAdded');
-      } else {
-        console.warn('[cs] sdk.cart.event.onAdded is not a function');
+  function interceptCartAdd() {
+    var origOpen = XMLHttpRequest.prototype.open;
+    var origSend = XMLHttpRequest.prototype.send;
+
+    XMLHttpRequest.prototype.open = function (method, url) {
+      this._csMethod = method;
+      this._csUrl    = url;
+      return origOpen.apply(this, arguments);
+    };
+
+    XMLHttpRequest.prototype.send = function () {
+      var xhr = this;
+      if (xhr._csMethod === 'POST' && /\/store\/v1\/cart\/[^/]+\/item\/[^/]+\/add/.test(xhr._csUrl)) {
+        xhr.addEventListener('load', function () {
+          if (popupTriggered || !activeConfig) return;
+          try {
+            var resp = JSON.parse(xhr.responseText);
+            if (!resp.success) return;
+            if (resp.data && resp.data.offer) {
+              console.log('[cs] salla native offer attached — skipping');
+              return;
+            }
+            console.log('[cs] cart add confirmed, showing popup');
+            onCartAdded();
+          } catch (e) { /* non-JSON response, ignore */ }
+        });
       }
-    } else {
-      console.warn('[cs] sdk.cart.event not available');
-    }
-    document.addEventListener('click', function (e) {
-      if (popupTriggered) return;
-      var el = e.target.closest('salla-button[quick-buy], button[quick-buy]');
-      if (!el) return;
-      console.log('[cs] add-to-cart click detected, waiting 1500ms...');
-      setTimeout(function () {
-        if (document.querySelector('salla-offer-modal[visible]')) {
-          console.log('[cs] salla native offer modal open — skipping');
-          return;
-        }
-        onCartAdded();
-      }, 1500);
-    }, true);
-    console.log('[cs] click fallback listener attached');
+      return origSend.apply(this, arguments);
+    };
+
+    console.log('[cs] XHR cart-add interceptor attached');
   }
 
   function onCategoryIds(catIds) {
@@ -282,9 +286,12 @@
     console.log('[cs] matched config:', activeConfig);
     if (!activeConfig) { console.log('[cs] no matching cross-sell config — bailing'); return; }
     fetchProducts(activeConfig.upsellCategory)
-      .then(function (p) { console.log('[cs] pre-fetched', p.length, 'products'); })
+      .then(function (p) {
+        console.log('[cs] pre-fetched', p.length, 'products');
+        if (!p.length) { console.log('[cs] upsell category empty — disabling'); activeConfig = null; }
+      })
       .catch(function (e) { console.warn('[cs] pre-fetch failed:', e); });
-    setupListeners();
+    interceptCartAdd();
   }
 
   function findDetailEntry() {
