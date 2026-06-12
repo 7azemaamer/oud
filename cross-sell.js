@@ -1,4 +1,4 @@
-/* cross-sell.js — hamtaro.sa cross-sell popup | v1.9.0 */
+/* cross-sell.js — hamtaro.sa cross-sell popup | v1.10.0 */
 (function () {
   'use strict';
 
@@ -265,10 +265,6 @@
           try {
             var resp = JSON.parse(xhr.responseText);
             if (!resp.success) return;
-            if (resp.data && resp.data.offer) {
-              console.log('[cs] salla native offer attached — skipping');
-              return;
-            }
             console.log('[cs] cart add confirmed, showing popup');
             onCartAdded();
           } catch (e) { /* non-JSON response, ignore */ }
@@ -280,10 +276,52 @@
     console.log('[cs] XHR cart-add interceptor attached');
   }
 
+  function suppressSallaNativeOffer() {
+    if (!document.getElementById('cs-salla-block')) {
+      var st = document.createElement('style');
+      st.id = 'cs-salla-block';
+      st.textContent = '.s-offer-modal-type-products{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important;}';
+      (document.head || document.documentElement).insertBefore(st, (document.head || document.documentElement).firstChild);
+    }
+
+    function removeNode(node) {
+      if (node.parentNode) node.parentNode.removeChild(node);
+    }
+
+    function purge() {
+      var els = document.querySelectorAll('.s-offer-modal-type-products, .s-modal-overlay');
+      for (var i = 0; i < els.length; i++) removeNode(els[i]);
+      document.body.classList.remove('modal-is-open');
+    }
+
+    purge();
+
+    new MutationObserver(function (mutations) {
+      var needsPurge = false;
+      for (var i = 0; i < mutations.length; i++) {
+        var m = mutations[i];
+        if (m.type === 'attributes') { needsPurge = true; break; }
+        var added = m.addedNodes;
+        for (var j = 0; j < added.length; j++) {
+          var node = added[j];
+          if (!node || node.nodeType !== 1) continue;
+          if (node.matches && (node.matches('.s-offer-modal-type-products') || node.matches('.s-modal-overlay'))) {
+            removeNode(node);
+          } else if (node.querySelector) {
+            var inner = node.querySelector('.s-offer-modal-type-products, .s-modal-overlay');
+            if (inner) removeNode(inner);
+          }
+        }
+      }
+      if (needsPurge) purge();
+    }).observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+  }
+
   function onCategoryIds(catIds) {
     activeConfig = matchConfig(catIds);
     console.log('[cs] matched config:', activeConfig);
     if (!activeConfig) { console.log('[cs] no matching cross-sell config — bailing'); return; }
+    suppressSallaNativeOffer();
     fetchProducts(activeConfig.upsellCategory)
       .then(function (p) {
         console.log('[cs] pre-fetched', p.length, 'products');
