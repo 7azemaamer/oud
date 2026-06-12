@@ -58,6 +58,20 @@
       discount:        15,
       title:           'أضفها معها وفّر',
       subtitle:        'منتجات يطلبها العملاء معها دائماً'
+    },
+    {
+      triggerCategory: '1090483385',
+      upsellCategory:  '269929068',
+      discount:        15,
+      title:           'تخلص من رائحة الرمل وفّر 15%',
+      subtitle:        'تخلص من رائحة الرمل المزعجة مع خصم لفترة محدودة'
+    },
+    {
+      triggerCategory: '983530912',
+      upsellCategory:  '1801049823',
+      discount:        15,
+      title:           'أضف ألعاب القطط وفّر',
+      subtitle:        'منتجات يطلبها العملاء معها دائماً'
     }
   ];
 
@@ -268,23 +282,21 @@
     console.log('[cs] detail event not yet in dataLayer — intercepting push');
     var dl = window.dataLayer = window.dataLayer || [];
     var origPush = dl.push.bind(dl);
+    var giveUpTimer = setTimeout(function () {
+      dl.push = origPush;
+      console.log('[cs] detail event never arrived — bailing');
+    }, 10000);
     dl.push = function () {
       var result = origPush.apply(dl, arguments);
       var ids = getPageCategoryIds();
       if (ids.length) {
+        clearTimeout(giveUpTimer);
         dl.push = origPush;
         console.log('[cs] category ids (via push intercept):', ids);
         onCategoryIds(ids);
       }
       return result;
     };
-
-    setTimeout(function () {
-      if (dl.push !== origPush) {
-        dl.push = origPush;
-        console.log('[cs] detail event never arrived — bailing');
-      }
-    }, 10000);
   }
 
   function init() {
