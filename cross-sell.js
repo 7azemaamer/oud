@@ -53,25 +53,25 @@
 
   var CROSS_SELL = [
     {
-      triggerCategory: '2073773743',
-      upsellCategory:  '1471205605',
-      discount:        15,
-      title:           'أضفها معها وفّر',
-      subtitle:        'منتجات يطلبها العملاء معها دائماً'
+      triggerCategories: ['2073773743', '4760844'],
+      upsellCategory:    '1471205605',
+      discount:          15,
+      title:             'أضفها معها وفّر',
+      subtitle:          'منتجات يطلبها العملاء معها دائماً'
     },
     {
-      triggerCategory: '1090483385',
-      upsellCategory:  '269929068',
-      discount:        15,
-      title:           'تخلص من رائحة الرمل وفّر 15%',
-      subtitle:        'تخلص من رائحة الرمل المزعجة مع خصم لفترة محدودة'
+      triggerCategories: ['1090483385', '4760862'],
+      upsellCategory:    '269929068',
+      discount:          15,
+      title:             'تخلص من رائحة الرمل وفّر 15%',
+      subtitle:          'تخلص من رائحة الرمل المزعجة مع خصم لفترة محدودة'
     },
     {
-      triggerCategory: '983530912',
-      upsellCategory:  '1801049823',
-      discount:        15,
-      title:           'أضف ألعاب القطط وفّر',
-      subtitle:        'منتجات يطلبها العملاء معها دائماً'
+      triggerCategories: ['983530912', '4760837'],
+      upsellCategory:    '1801049823',
+      discount:          15,
+      title:             'أضف ألعاب القطط وفّر',
+      subtitle:          'منتجات يطلبها العملاء معها دائماً'
     }
   ];
 
@@ -106,42 +106,18 @@
   }
 
   function resolveCategories(entry) {
-    var parsed    = extractIdsFromDetailEntry(entry);
-    var ids       = parsed.ids;
-    var productId = parsed.productId;
-
-    // if we already have a match skip the API call
-    if (matchConfig(ids)) {
-      console.log('[cs] category match (fast path):', ids);
-      onCategoryIds(ids);
-      return;
-    }
-
-    if (!productId) { console.log('[cs] no product id — bailing'); return; }
-
-    console.log('[cs] no match yet, fetching product', productId, 'from API');
-    fetch(API_BASE + '/products/' + productId, { method: 'GET', headers: API_HDRS })
-      .then(function (r) { return r.json(); })
-      .then(function (res) {
-        var product = res.data;
-        if (product && product.categories) {
-          product.categories.forEach(function (cat) {
-            if (ids.indexOf(String(cat.id)) === -1) ids.push(String(cat.id));
-            if (cat.parent_id && ids.indexOf(String(cat.parent_id)) === -1) ids.push(String(cat.parent_id));
-          });
-        }
-        console.log('[cs] category ids after API:', ids);
-        onCategoryIds(ids);
-      })
-      .catch(function (err) {
-        console.warn('[cs] product API fetch failed:', err);
-        onCategoryIds(ids);
-      });
+    var parsed = extractIdsFromDetailEntry(entry);
+    var ids    = parsed.ids;
+    console.log('[cs] category ids:', ids);
+    onCategoryIds(ids);
   }
 
   function matchConfig(catIds) {
     for (var i = 0; i < CROSS_SELL.length; i++) {
-      if (catIds.indexOf(CROSS_SELL[i].triggerCategory) !== -1) return CROSS_SELL[i];
+      var triggers = CROSS_SELL[i].triggerCategories;
+      for (var j = 0; j < triggers.length; j++) {
+        if (catIds.indexOf(triggers[j]) !== -1) return CROSS_SELL[i];
+      }
     }
     return null;
   }
