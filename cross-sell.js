@@ -93,31 +93,50 @@
   var productsCache  = {};
   var popupTriggered = false;
 
-  function getPageCategoryIds() {
+  function extractIdsFromDetailEntry(entry) {
     var ids = [];
+    var prods = (entry.ecommerce && entry.ecommerce.detail && entry.ecommerce.detail.products) || [];
+    if (prods.length && prods[0].categories) {
+      ids = prods[0].categories.map(function (c) { return String(c.id); });
+    }
+    var referrer = (entry.page && entry.page.referrer) || document.referrer;
+    var m = referrer.match(/[?&]filters(?:%5B|\[)category_id(?:%5D|\])=(\d+)/);
+    if (m && ids.indexOf(m[1]) === -1) ids.push(m[1]);
+    return { ids: ids, productId: prods.length && prods[0].id };
+  }
 
-    var dl = window.dataLayer || [];
-    for (var i = 0; i < dl.length; i++) {
-      var e = dl[i];
-      if (e.event === 'detail' && e.ecommerce && e.ecommerce.detail) {
-        var prods = (e.ecommerce.detail.products) || [];
-        if (prods.length && prods[0].categories) {
-          ids = prods[0].categories.map(function (c) { return String(c.id); });
-        }
-        // referrer category id baked into the dataLayer entry
-        if (e.page && e.page.referrer) {
-          var m = e.page.referrer.match(/[?&]filters(?:%5B|\[)category_id(?:%5D|\])=(\d+)/);
-          if (m && ids.indexOf(m[1]) === -1) ids.push(m[1]);
-        }
-        if (ids.length) return ids;
-      }
+  function resolveCategories(entry) {
+    var parsed    = extractIdsFromDetailEntry(entry);
+    var ids       = parsed.ids;
+    var productId = parsed.productId;
+
+    // if we already have a match skip the API call
+    if (matchConfig(ids)) {
+      console.log('[cs] category match (fast path):', ids);
+      onCategoryIds(ids);
+      return;
     }
 
-    // fallback: read from the browser referrer directly
-    var rm = document.referrer.match(/[?&]filters(?:%5B|\[)category_id(?:%5D|\])=(\d+)/);
-    if (rm) ids.push(rm[1]);
+    if (!productId) { console.log('[cs] no product id — bailing'); return; }
 
-    return ids;
+    console.log('[cs] no match yet, fetching product', productId, 'from API');
+    fetch(API_BASE + '/products/' + productId, { method: 'GET', headers: API_HDRS })
+      .then(function (r) { return r.json(); })
+      .then(function (res) {
+        var product = res.data;
+        if (product && product.categories) {
+          product.categories.forEach(function (cat) {
+            if (ids.indexOf(String(cat.id)) === -1) ids.push(String(cat.id));
+            if (cat.parent_id && ids.indexOf(String(cat.parent_id)) === -1) ids.push(String(cat.parent_id));
+          });
+        }
+        console.log('[cs] category ids after API:', ids);
+        onCategoryIds(ids);
+      })
+      .catch(function (err) {
+        console.warn('[cs] product API fetch failed:', err);
+        onCategoryIds(ids);
+      });
   }
 
   function matchConfig(catIds) {
@@ -288,9 +307,17 @@
     setupListeners();
   }
 
+  function findDetailEntry() {
+    var dl = window.dataLayer || [];
+    for (var i = 0; i < dl.length; i++) {
+      if (dl[i].event === 'detail' && dl[i].ecommerce && dl[i].ecommerce.detail) return dl[i];
+    }
+    return null;
+  }
+
   function waitForDetailEvent() {
-    var catIds = getPageCategoryIds();
-    if (catIds.length) { console.log('[cs] category ids (immediate):', catIds); onCategoryIds(catIds); return; }
+    var entry = findDetailEntry();
+    if (entry) { console.log('[cs] detail entry found immediately'); resolveCategories(entry); return; }
 
     console.log('[cs] detail event not yet in dataLayer — intercepting push');
     var dl = window.dataLayer = window.dataLayer || [];
@@ -301,12 +328,12 @@
     }, 10000);
     dl.push = function () {
       var result = origPush.apply(dl, arguments);
-      var ids = getPageCategoryIds();
-      if (ids.length) {
+      var found = findDetailEntry();
+      if (found) {
         clearTimeout(giveUpTimer);
         dl.push = origPush;
-        console.log('[cs] category ids (via push intercept):', ids);
-        onCategoryIds(ids);
+        console.log('[cs] detail entry captured via push intercept');
+        resolveCategories(found);
       }
       return result;
     };
