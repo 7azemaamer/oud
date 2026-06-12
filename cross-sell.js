@@ -251,18 +251,7 @@
     console.log('[cs] click fallback listener attached');
   }
 
-  function tryInit(attemptsLeft) {
-    var catIds = getPageCategoryIds();
-    console.log('[cs] category ids from dataLayer:', catIds);
-    if (!catIds.length) {
-      if (attemptsLeft > 0) {
-        console.log('[cs] categories not ready, retrying in 500ms (' + attemptsLeft + ' attempts left)');
-        setTimeout(function () { tryInit(attemptsLeft - 1); }, 500);
-      } else {
-        console.log('[cs] no category ids found after retries — bailing');
-      }
-      return;
-    }
+  function onCategoryIds(catIds) {
     activeConfig = matchConfig(catIds);
     console.log('[cs] matched config:', activeConfig);
     if (!activeConfig) { console.log('[cs] no matching cross-sell config — bailing'); return; }
@@ -272,11 +261,37 @@
     setupListeners();
   }
 
+  function waitForDetailEvent() {
+    var catIds = getPageCategoryIds();
+    if (catIds.length) { console.log('[cs] category ids (immediate):', catIds); onCategoryIds(catIds); return; }
+
+    console.log('[cs] detail event not yet in dataLayer — intercepting push');
+    var dl = window.dataLayer = window.dataLayer || [];
+    var origPush = dl.push.bind(dl);
+    dl.push = function () {
+      var result = origPush.apply(dl, arguments);
+      var ids = getPageCategoryIds();
+      if (ids.length) {
+        dl.push = origPush;
+        console.log('[cs] category ids (via push intercept):', ids);
+        onCategoryIds(ids);
+      }
+      return result;
+    };
+
+    setTimeout(function () {
+      if (dl.push !== origPush) {
+        dl.push = origPush;
+        console.log('[cs] detail event never arrived — bailing');
+      }
+    }, 10000);
+  }
+
   function init() {
     console.log('[cs] init fired, readyState:', document.readyState);
     if (!isProductPage()) { console.log('[cs] not a product page — bailing'); return; }
     console.log('[cs] product page confirmed');
-    tryInit(4);
+    waitForDetailEvent();
   }
 
   if (document.readyState === 'loading') {
