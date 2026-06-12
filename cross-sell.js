@@ -1,4 +1,4 @@
-/* cross-sell.js — hamtaro.sa cross-sell popup | v1.13.0 */
+/* cross-sell.js — hamtaro.sa cross-sell popup | v1.14.0 */
 (function () {
   'use strict';
 
@@ -6,47 +6,45 @@
   var s = document.createElement('style');
   s.id = 'cs-styles';
   s.textContent = [
-    ':root{--cs-green:#4CD964;--cs-green-dim:rgba(76,217,100,.12);--cs-green-glow:rgba(76,217,100,.22);--cs-red:#ff3b30;--cs-text:#0f1113;--cs-muted:#8a8f9e;--cs-border:#e8ebf4;--cs-card-bg:#ffffff;--cs-sheet-bg:#f7f8fc;--cs-r:20px;--cs-ease:cubic-bezier(.32,0,.15,1)}',
-    '#cs-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9998;opacity:0;transition:opacity .35s var(--cs-ease);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}',
+    ':root{--cs-red:#D92B2B;--cs-save:#16A34A;--cs-save-bg:#DCFCE7;--cs-text:#111;--cs-muted:#888;--cs-border:#EBEBEB;--cs-ease:cubic-bezier(.32,0,.15,1)}',
+    '#cs-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9998;opacity:0;transition:opacity .3s var(--cs-ease);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}',
     '#cs-backdrop.cs-open{opacity:1}',
-    '#cs-sheet{position:fixed;bottom:0;left:0;right:0;z-index:9999;background:var(--cs-sheet-bg);border-radius:var(--cs-r) var(--cs-r) 0 0;box-shadow:0 -8px 40px rgba(0,0,0,.18);transform:translateY(100%);transition:transform .42s var(--cs-ease);direction:rtl;font-family:Cairo,Tajawal,Almarai,sans-serif;max-height:88vh;display:flex;flex-direction:column;overflow:hidden}',
+    '#cs-sheet{position:fixed;bottom:0;left:0;right:0;z-index:9999;background:#fff;border-radius:22px 22px 0 0;box-shadow:0 -4px 32px rgba(0,0,0,.12);transform:translateY(100%);transition:transform .4s var(--cs-ease);direction:rtl;font-family:Cairo,Tajawal,Almarai,sans-serif;max-height:88vh;display:flex;flex-direction:column;overflow:hidden}',
     '#cs-sheet.cs-open{transform:translateY(0)}',
-    '#cs-sheet::before{content:"";display:block;width:40px;height:4px;background:#d0d5e8;border-radius:99px;margin:10px auto 0;flex-shrink:0}',
-    '#cs-header{display:flex;align-items:flex-start;justify-content:space-between;padding:12px 18px 14px;flex-shrink:0;border-bottom:1px solid var(--cs-border);background:#fff;gap:12px}',
-    '#cs-header-main{display:flex;align-items:center;gap:12px;flex:1;min-width:0}',
-    '#cs-discount-badge{display:inline-flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#ff3b30 0%,#c0392b 100%);color:#fff;font-size:15px;font-weight:900;padding:8px 12px;border-radius:12px;letter-spacing:-.01em;flex-shrink:0;box-shadow:0 4px 14px rgba(255,59,48,.35);line-height:1}',
-    '#cs-header-text{min-width:0}',
-    '#cs-title{font-size:15px;font-weight:800;color:var(--cs-text);line-height:1.3;margin:0 0 2px}',
-    '#cs-subtitle{font-size:12px;color:var(--cs-muted);font-weight:500;margin:0;line-height:1.3}',
-    '#cs-close{background:#eef0f7;border:none;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;color:#666;flex-shrink:0;margin-top:2px;transition:background .15s;padding:0;line-height:1}',
-    '#cs-close:hover{background:#e0e3f0}',
-    '#cs-products{display:flex;flex-direction:row;gap:12px;overflow-x:auto;overflow-y:hidden;padding:16px 18px 8px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;flex-shrink:0}',
+    '#cs-sheet::before{content:"";display:block;width:36px;height:4px;background:#DDD;border-radius:99px;margin:12px auto 0;flex-shrink:0}',
+    '#cs-header{padding:14px 18px 14px;flex-shrink:0;border-bottom:1px solid var(--cs-border);background:#fff;position:relative;text-align:center}',
+    '#cs-discount-badge{position:absolute;top:14px;left:14px;background:var(--cs-red);color:#fff;font-size:12px;font-weight:900;padding:5px 10px;border-radius:20px;line-height:1;letter-spacing:.01em}',
+    '#cs-title{font-size:16px;font-weight:800;color:var(--cs-text);margin:0 0 3px;line-height:1.3}',
+    '#cs-subtitle{font-size:12px;color:var(--cs-muted);margin:0;line-height:1.3;font-weight:400}',
+    '#cs-close{position:absolute;top:14px;right:14px;background:#F2F2F2;border:none;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;color:#555;padding:0;line-height:1;transition:background .15s}',
+    '#cs-close:hover{background:#E5E5E5}',
+    '#cs-products{display:flex;gap:10px;overflow-x:auto;padding:14px 16px 12px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;flex-shrink:0}',
     '#cs-products::-webkit-scrollbar{display:none}',
-    '.cs-skeleton{flex-shrink:0;width:148px;scroll-snap-align:start;background:#fff;border-radius:14px;border:1.5px solid var(--cs-border);overflow:hidden}',
-    '.cs-skel-img{width:100%;height:120px;background:linear-gradient(90deg,#eef0f7 25%,#f7f8fc 50%,#eef0f7 75%);background-size:200% 100%;animation:cs-shimmer 1.4s infinite}',
-    '.cs-skel-line{height:10px;border-radius:6px;background:linear-gradient(90deg,#eef0f7 25%,#f7f8fc 50%,#eef0f7 75%);background-size:200% 100%;animation:cs-shimmer 1.4s infinite;margin:10px 12px 6px}',
-    '.cs-skel-line.short{width:55%;margin-top:4px}',
-    '.cs-skel-btn{height:32px;border-radius:8px;background:linear-gradient(90deg,#eef0f7 25%,#f7f8fc 50%,#eef0f7 75%);background-size:200% 100%;animation:cs-shimmer 1.4s infinite;margin:8px 12px 12px}',
+    '.cs-skeleton{flex-shrink:0;width:148px;scroll-snap-align:start;background:#fff;border-radius:14px;border:1px solid var(--cs-border);overflow:hidden}',
+    '.cs-skel-img{width:100%;height:132px;background:linear-gradient(90deg,#F0F0F0 25%,#F8F8F8 50%,#F0F0F0 75%);background-size:200% 100%;animation:cs-shimmer 1.4s infinite}',
+    '.cs-skel-line{height:10px;border-radius:6px;background:linear-gradient(90deg,#F0F0F0 25%,#F8F8F8 50%,#F0F0F0 75%);background-size:200% 100%;animation:cs-shimmer 1.4s infinite;margin:10px 10px 6px}',
+    '.cs-skel-line.short{width:50%;margin-top:4px}',
+    '.cs-skel-btn{height:34px;border-radius:9px;background:linear-gradient(90deg,#F0F0F0 25%,#F8F8F8 50%,#F0F0F0 75%);background-size:200% 100%;animation:cs-shimmer 1.4s infinite;margin:8px 10px 10px}',
     '@keyframes cs-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}',
-    '.cs-card{flex-shrink:0;width:148px;scroll-snap-align:start;background:var(--cs-card-bg);border-radius:14px;border:1.5px solid var(--cs-border);overflow:hidden;display:flex;flex-direction:column;transition:border-color .2s,box-shadow .2s}',
-    '.cs-card:hover{border-color:var(--cs-green);box-shadow:0 4px 18px var(--cs-green-dim)}',
-    '.cs-card-img-wrap{width:100%;aspect-ratio:1;overflow:hidden;background:#f3f4f8}',
+    '.cs-card{flex-shrink:0;width:148px;scroll-snap-align:start;background:#fff;border-radius:14px;border:1px solid var(--cs-border);overflow:hidden;display:flex;flex-direction:column;transition:transform .2s,box-shadow .2s}',
+    '.cs-card:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.08)}',
+    '.cs-card-img-wrap{width:100%;aspect-ratio:1;overflow:hidden;background:#F7F7F7;position:relative}',
     '.cs-card-img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .3s ease}',
     '.cs-card:hover .cs-card-img{transform:scale(1.04)}',
-    '.cs-card-body{padding:9px 10px 10px;display:flex;flex-direction:column;gap:6px;flex:1}',
+    '.cs-off-pill{position:absolute;top:7px;left:7px;background:var(--cs-red);color:#fff;font-size:10px;font-weight:800;padding:3px 7px;border-radius:20px;z-index:1;line-height:1.3}',
+    '.cs-card-body{padding:9px 10px 11px;display:flex;flex-direction:column;gap:5px;flex:1}',
     '.cs-card-name{font-size:12px;font-weight:700;color:var(--cs-text);line-height:1.4;margin:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}',
-    '.cs-card-pricing{display:flex;flex-direction:column;gap:1px}',
-    '.cs-card-price{font-size:16px;font-weight:900;color:var(--cs-text);line-height:1;display:flex;align-items:center;gap:3px}',
-    '.cs-card-price .cs-sar{font-size:12px;color:var(--cs-muted);font-style:normal}',
-    '.cs-card-original{font-size:11px;font-weight:500;color:var(--cs-muted);text-decoration:line-through;line-height:1;display:flex;align-items:center;gap:2px}',
-    '.cs-card-original .cs-sar-sm{font-size:9px;font-style:normal}',
-    '.cs-save-tag{font-size:10px;font-weight:700;color:#1a7a32;background:var(--cs-green-dim);border-radius:6px;padding:2px 6px;display:inline-block;width:fit-content}',
-    '.cs-add-btn{width:100%;background:var(--cs-text);color:#fff;border:none;border-radius:9px;padding:8px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .2s,transform .1s;margin-top:auto;line-height:1}',
-    '.cs-add-btn:hover{background:#1f2228}',
+    '.cs-price-row{display:flex;align-items:baseline;gap:4px;flex-wrap:wrap}',
+    '.cs-card-price{font-size:18px;font-weight:900;color:var(--cs-text);line-height:1}',
+    '.cs-card-price .cs-sar{font-size:11px;color:var(--cs-muted);font-style:normal;font-weight:500}',
+    '.cs-card-original{font-size:11px;color:var(--cs-muted);text-decoration:line-through;line-height:1}',
+    '.cs-save-tag{font-size:10px;font-weight:700;color:var(--cs-save);background:var(--cs-save-bg);border-radius:6px;padding:2px 7px;display:inline-block;width:fit-content;line-height:1.5}',
+    '.cs-add-btn{width:100%;background:#111;color:#fff;border:none;border-radius:10px;padding:9px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .15s,transform .1s;margin-top:auto;line-height:1}',
+    '.cs-add-btn:hover{background:#000}',
     '.cs-add-btn:active{transform:scale(.97)}',
-    '.cs-add-btn:disabled{opacity:.65;cursor:default;transform:none}',
-    '.cs-add-btn.cs-added{background:var(--cs-green);color:#fff}',
-    '#cs-footer{text-align:center;font-size:11px;color:var(--cs-muted);font-weight:500;padding:6px 18px 18px;margin:0;flex-shrink:0;border-top:1px solid var(--cs-border);background:#fff}',
+    '.cs-add-btn:disabled{opacity:.5;cursor:default;transform:none}',
+    '.cs-add-btn.cs-added{background:#16A34A;color:#fff}',
+    '#cs-footer{text-align:center;font-size:11px;color:var(--cs-muted);padding:8px 18px 18px;margin:0;flex-shrink:0;border-top:1px solid var(--cs-border)}',
     '@supports (padding-bottom:env(safe-area-inset-bottom)){#cs-footer{padding-bottom:calc(14px + env(safe-area-inset-bottom))}}'
   ].join('');
   (document.head || document.documentElement).appendChild(s);
@@ -145,13 +143,26 @@
   }
 
   function buildCard(p, discount) {
-    var raw        = p.price && (p.price.amount !== undefined ? p.price.amount : p.price);
-    var price      = parseFloat(raw) || 0;
+    var price      = parseFloat(p.price) || 0;
     var discounted = (price * (1 - discount / 100)).toFixed(2);
     var saved      = (price - parseFloat(discounted)).toFixed(2);
-    var img        = p.thumbnail || (p.images && p.images[0] && (p.images[0].url || p.images[0])) || '';
+    var img        = (p.image && p.image.url) || p.thumbnail || '';
     var name       = (p.name || '').replace(/</g, '&lt;');
-    return '<div class="cs-card"><div class="cs-card-img-wrap"><img class="cs-card-img" src="' + img + '" alt="' + name + '" loading="lazy"></div><div class="cs-card-body"><p class="cs-card-name">' + name + '</p><div class="cs-card-pricing"><span class="cs-card-price">' + discounted + ' <i class="sicon-sar cs-sar"></i></span>' + (price > 0 ? '<span class="cs-card-original">' + price.toFixed(2) + ' <i class="sicon-sar cs-sar-sm"></i></span>' : '') + '</div>' + (saved > 0 ? '<span class="cs-save-tag">\u0648\u0641\u0651\u0631 ' + saved + ' \u0631.\u0633</span>' : '') + '<button class="cs-add-btn" data-id="' + p.id + '">\u0623\u0636\u0641 \u0644\u0644\u0633\u0644\u0629</button></div></div>';
+    return '<div class="cs-card">' +
+      '<div class="cs-card-img-wrap">' +
+        '<span class="cs-off-pill">&minus;' + discount + '%</span>' +
+        '<img class="cs-card-img" src="' + img + '" alt="' + name + '" loading="lazy">' +
+      '</div>' +
+      '<div class="cs-card-body">' +
+        '<p class="cs-card-name">' + name + '</p>' +
+        '<div class="cs-price-row">' +
+          '<span class="cs-card-price">' + discounted + '\u00a0<i class="sicon-sar cs-sar"></i></span>' +
+          (price > 0 ? '<span class="cs-card-original">' + price.toFixed(2) + '</span>' : '') +
+        '</div>' +
+        (parseFloat(saved) > 0 ? '<span class="cs-save-tag">\u0648\u0641\u0651\u0631 ' + saved + ' \u0631.\u0633</span>' : '') +
+        '<button class="cs-add-btn" data-id="' + p.id + '">\u0623\u0636\u0641 \u0644\u0644\u0633\u0644\u0629</button>' +
+      '</div>' +
+    '</div>';
   }
 
   function openPopup(config) {
@@ -162,9 +173,14 @@
     sheet.id  = 'cs-sheet';
     sheet.setAttribute('dir', 'rtl');
     sheet.innerHTML =
-      '<div id="cs-header"><div id="cs-header-main"><span id="cs-discount-badge">&minus;' + config.discount + '%</span><div id="cs-header-text"><p id="cs-title">' + config.title + ' ' + config.discount + '%</p><p id="cs-subtitle">' + config.subtitle + '</p></div></div><button id="cs-close" aria-label="\u0625\u063a\u0644\u0627\u0642">&#x2715;</button></div>' +
+      '<div id="cs-header">' +
+        '<span id="cs-discount-badge">&minus;' + config.discount + '%</span>' +
+        '<p id="cs-title">' + config.title + '</p>' +
+        '<p id="cs-subtitle">' + config.subtitle + '</p>' +
+        '<button id="cs-close" aria-label="\u0625\u063a\u0644\u0627\u0642">&#x2715;</button>' +
+      '</div>' +
       '<div id="cs-products">' + buildSkeletons(4) + '</div>' +
-      '<p id="cs-footer">\u0627\u0644\u062e\u0635\u0645 \u064a\u064f\u0637\u0628\u0651\u064e\u0642 \u062a\u0644\u0642\u0627\u0626\u064a\u0627\u064b \u0639\u0646\u062f \u0627\u0644\u0625\u0636\u0627\u0641\u0629 \u0644\u0644\u0633\u0644\u0629</p>';
+      '<p id="cs-footer">\u062e\u0635\u0645 ' + config.discount + '% \u064a\u064f\u0637\u0628\u0651\u064e\u0642 \u062a\u0644\u0642\u0627\u0626\u064a\u0627\u064b \u0639\u0646\u062f \u0627\u0644\u0625\u0636\u0627\u0641\u0629 \u0644\u0644\u0633\u0644\u0629</p>';
     document.body.appendChild(backdrop);
     document.body.appendChild(sheet);
     requestAnimationFrame(function () {
@@ -232,8 +248,8 @@
   }
 
   function onCartAdded() {
-    if (popupTriggered || !activeConfig) return;
-    popupTriggered = true;
+    if (!activeConfig) return;
+    if (document.getElementById('cs-backdrop')) closePopup();
     openPopup(activeConfig);
   }
 
