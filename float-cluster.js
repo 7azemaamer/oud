@@ -1,4 +1,4 @@
-/* float-cluster.js — hamtaro.sa floating widget cluster | v1.0.0 */
+/* float-cluster.js — hamtaro.sa floating widget cluster | v1.0.1 */
 (function () {
   'use strict';
 
@@ -30,7 +30,8 @@
     '.pe-fc-btn:hover .pe-fc-label{opacity:1;transform:translateY(-50%) translateX(0)}',
     '.pe-fc-btn.pe-active{transform:scale(1.12)!important}',
     '.pe-fc-btn.pe-active .pe-fc-label{opacity:1!important;transform:translateY(-50%) translateX(0)!important}',
-    '@media(max-width:767px){#pe-float-cluster{top:auto;bottom:200px;transform:none;animation:pe-cluster-in-mob .55s cubic-bezier(.4,0,.2,1) 1.2s both,pe-cluster-shake-mob 9s ease-in-out 6s infinite}}'
+    '@media(max-width:767px){#pe-float-cluster{top:auto;bottom:200px;transform:none;animation:pe-cluster-in-mob .55s cubic-bezier(.4,0,.2,1) 1.2s both,pe-cluster-shake-mob 9s ease-in-out 6s infinite}}',
+    '#launcher,#wa-angel,#ZN_Widget_Button_ZN_LV,[data-testid="bcio__popupTeaser"]{opacity:0!important;pointer-events:none!important}'
   ].join('');
   (document.head || document.documentElement).appendChild(s);
 
