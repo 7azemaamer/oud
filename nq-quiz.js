@@ -1,5 +1,5 @@
 /* ─────────────────────────────────────────────────────────
-   nq-quiz.js  v2.2.0 — hamtaro.sa
+   nq-quiz.js  v2.2.1 — hamtaro.sa
    Product concierge — auto-shows 5s, once per session
    Centered modal · list-row layout · !important CSS guards
    · div+onclick product cards (no Salla hover injection)
@@ -176,7 +176,7 @@
     '.hmqz-hdr{padding:24px 22px 0!important;display:flex!important;align-items:flex-start!important;',
     'justify-content:space-between!important;gap:12px!important;}',
     '.hmqz-hdr-inner{flex:1!important;min-width:0!important;}',
-    '.hmqz-eyebrow{font-size:10.5px!important;font-weight:700!important;letter-spacing:.14em!important;',
+    '.hmqz-eyebrow{font-size:10.5px!important;font-weight:bold!important;letter-spacing:.14em!important;',
     'text-transform:uppercase!important;color:#9CA3AF!important;display:block!important;margin-bottom:5px!important;}',
     '.hmqz-title{font-size:20px!important;font-weight:900!important;color:#0D0D0D!important;',
     'letter-spacing:-.022em!important;line-height:1.2!important;}',
@@ -231,7 +231,7 @@
 
     /* Row text */
     '.hmqz-row-text{flex:1!important;min-width:0!important;}',
-    '.hmqz-row-label{font-size:15px!important;font-weight:700!important;color:#0D0D0D!important;',
+    '.hmqz-row-label{font-size:15px!important;font-weight:bold!important;color:#0D0D0D!important;',
     'display:block!important;line-height:1.3!important;}',
     '.hmqz-row-note{font-size:12px!important;color:#9CA3AF!important;',
     'display:block!important;margin-top:2px!important;}',
@@ -286,12 +286,12 @@
     'justify-content:space-between!important;gap:8px!important;}',
     '.hmqz-price{font-size:17px!important;font-weight:900!important;color:#0D0D0D!important;',
     'direction:ltr!important;display:inline-block!important;}',
-    '.hmqz-price em{font-size:11px!important;font-weight:400!important;font-style:normal!important;',
+    '.hmqz-price em{font-size:11px!important;font-weight:normal!important;font-style:normal!important;',
     'color:#9CA3AF!important;margin-right:2px!important;}',
     '.hmqz-cta{display:inline-flex!important;align-items:center!important;gap:5px!important;',
     'height:34px!important;padding:0 14px!important;',
     'background:#1A6B3A!important;color:#fff!important;',
-    'border-radius:999px!important;font-size:12px!important;font-weight:700!important;',
+    'border-radius:999px!important;font-size:12px!important;font-weight:bold!important;',
     'font-family:"Tajawal",system-ui,sans-serif!important;',
     'white-space:nowrap!important;',
     'transition:background .2s,transform .15s;',
@@ -319,14 +319,14 @@
     '.hmqz-alt-img img{width:100%!important;height:100%!important;',
     'object-fit:cover!important;display:block!important;}',
     '.hmqz-alt-text{flex:1!important;min-width:0!important;}',
-    '.hmqz-alt-badge{font-size:10px!important;font-weight:700!important;',
+    '.hmqz-alt-badge{font-size:10px!important;font-weight:bold!important;',
     'color:#1A6B3A!important;display:block!important;margin-bottom:2px!important;}',
-    '.hmqz-alt-name{font-size:13.5px!important;font-weight:700!important;',
+    '.hmqz-alt-name{font-size:13.5px!important;font-weight:bold!important;',
     'color:#0D0D0D!important;line-height:1.25!important;}',
     '.hmqz-alt-sub{font-size:11px!important;color:#9CA3AF!important;margin-top:1px!important;}',
     '.hmqz-alt-price{font-size:14px!important;font-weight:800!important;',
     'color:#0D0D0D!important;white-space:nowrap!important;flex-shrink:0!important;}',
-    '.hmqz-alt-price em{font-size:10px!important;font-weight:400!important;',
+    '.hmqz-alt-price em{font-size:10px!important;font-weight:normal!important;',
     'font-style:normal!important;color:#9CA3AF!important;margin-right:1px!important;}',
     '.hmqz-alt-arr{width:28px!important;height:28px!important;border-radius:50%!important;',
     'background:#F3F4F6!important;',
