@@ -10,7 +10,7 @@
   'use strict';
 
   var SK = 'hmqz_seen';
-  if (sessionStorage.getItem(SK)) return;
+  if (localStorage.getItem(SK)) return;
 
   var CDN   = 'https://cdn.salla.sa/zvoeKA/';
   var STORE = 'https://hamtaro.sa';
@@ -202,7 +202,7 @@
     });
   }
   function close() {
-    sessionStorage.setItem(SK,'1');
+    localStorage.setItem(SK,'1');
     el.bd.classList.remove('open');
     setModalClosed();
   }
