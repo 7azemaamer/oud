@@ -1,7 +1,7 @@
 /* ─────────────────────────────────────────────────────────
-   nq-quiz.js  v2.0.0 — hamtaro.sa
+   nq-quiz.js  v2.1.0 — hamtaro.sa
    Product concierge — auto-shows 5s, once per session
-   Centered modal · list-row layout · RTL Arabic
+   Centered modal · staggered rows · spring micro-interactions
 ───────────────────────────────────────────────────────── */
 (function () {
   'use strict';
@@ -163,7 +163,7 @@
     'width:min(500px,92vw);',
     'max-height:88dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;',
     'background:#FFFFFF;border-radius:20px;',
-    'box-shadow:0 32px 100px rgba(0,0,0,.2),0 2px 8px rgba(0,0,0,.06);',
+    'box-shadow:0 32px 100px rgba(0,0,0,.18),0 2px 8px rgba(0,0,0,.06),inset 0 1px 0 rgba(255,255,255,.9);',
     'direction:rtl;',
     'font-family:"Tajawal",system-ui,sans-serif;',
     '-webkit-font-smoothing:antialiased;',
@@ -276,7 +276,89 @@
     'font-size:12px;color:#9CA3AF;background:none;border:none;',
     'cursor:pointer;font-family:inherit;padding:14px 0 0;transition:color .2s;}',
     '.hmqz-restart:hover{color:#6B7280;}',
-    '.hmqz-restart u{text-underline-offset:3px;}'
+    '.hmqz-restart u{text-underline-offset:3px;}',
+
+    /* ── Motion Layer ── */
+
+    /* Modal backdrop pulse in */
+    '@keyframes hmqzBdIn{from{opacity:0}to{opacity:1}}',
+
+    /* Header slides down */
+    '@keyframes hmqzHdrIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}',
+    '.hmqz-hdr{animation:hmqzHdrIn .38s cubic-bezier(.16,1,.3,1) both;}',
+
+    /* Staggered row entrance — each row sets --hmqz-i via JS */
+    '@keyframes hmqzRowIn{',
+    'from{opacity:0;transform:translateY(14px)}',
+    'to{opacity:1;transform:translateY(0)}',
+    '}',
+    '.hmqz-row{',
+    'animation:hmqzRowIn .42s cubic-bezier(.16,1,.3,1) both;',
+    'animation-delay:calc(var(--hmqz-i,0) * 70ms);',
+    '}',
+
+    /* Tactile press — physical push feedback */
+    '.hmqz-row:active{transform:scale(.982)!important;transition:transform .1s ease!important;}',
+
+    /* Icon box spring bounce on select */
+    '@keyframes hmqzIconBounce{',
+    '0%{transform:scale(1)}',
+    '35%{transform:scale(.84)}',
+    '65%{transform:scale(1.14)}',
+    '82%{transform:scale(.96)}',
+    '100%{transform:scale(1)}',
+    '}',
+    '.hmqz-row.sel .hmqz-row-icon{animation:hmqzIconBounce .4s cubic-bezier(.34,1.56,.64,1);}',
+
+    /* Check mark pops in */
+    '@keyframes hmqzCheckIn{',
+    'from{transform:scale(0) rotate(-30deg);opacity:0}',
+    '60%{transform:scale(1.25) rotate(6deg);opacity:1}',
+    'to{transform:scale(1) rotate(0deg);opacity:1}',
+    '}',
+    '.hmqz-row.sel .hmqz-row-radio svg{animation:hmqzCheckIn .3s cubic-bezier(.34,1.56,.64,1) both;}',
+
+    /* Row border pulse on select */
+    '@keyframes hmqzSelPulse{',
+    '0%{box-shadow:0 0 0 0 rgba(26,107,58,.28)}',
+    '100%{box-shadow:0 0 0 6px rgba(26,107,58,0)}',
+    '}',
+    '.hmqz-row.sel{animation:hmqzSelPulse .55s ease-out,hmqzRowIn .42s cubic-bezier(.16,1,.3,1) both;}',
+
+    /* Result stagger entrance */
+    '@keyframes hmqzResultIn{',
+    'from{opacity:0;transform:translateY(18px)}',
+    'to{opacity:1;transform:translateY(0)}',
+    '}',
+    '.hmqz-rec-label{animation:hmqzResultIn .36s cubic-bezier(.16,1,.3,1) both;}',
+    '.hmqz-primary{animation:hmqzResultIn .44s cubic-bezier(.16,1,.3,1) .06s both;}',
+    '.hmqz-divider{animation:hmqzResultIn .3s ease .18s both;}',
+    '.hmqz-alt:nth-child(1){animation:hmqzResultIn .4s cubic-bezier(.16,1,.3,1) .16s both;}',
+    '.hmqz-alt:nth-child(2){animation:hmqzResultIn .4s cubic-bezier(.16,1,.3,1) .24s both;}',
+    '.hmqz-restart{animation:hmqzResultIn .35s ease .32s both;}',
+
+    /* CTA shimmer sweep on result hover */
+    '@keyframes hmqzShimmer{',
+    'from{background-position:200% center}',
+    'to{background-position:-200% center}',
+    '}',
+    '.hmqz-cta{',
+    'background-image:linear-gradient(90deg,#1A6B3A 0%,#1A6B3A 40%,#226B3E 50%,#1A6B3A 60%,#1A6B3A 100%);',
+    'background-size:200% auto;',
+    '}',
+    '.hmqz-primary:hover .hmqz-cta{',
+    'animation:hmqzShimmer 1.4s linear infinite;',
+    'background-size:200% auto;',
+    '}',
+
+    /* Alt row arrow slide on hover */
+    '.hmqz-alt:hover .hmqz-alt-arr svg{transform:translateX(-3px);transition:transform .25s cubic-bezier(.16,1,.3,1);}',
+    '.hmqz-alt-arr svg{transition:transform .2s ease;}',
+
+    /* Reduce motion — respect OS preference */
+    '@media(prefers-reduced-motion:reduce){',
+    '.hmqz-row,.hmqz-hdr,.hmqz-primary,.hmqz-alt,.hmqz-rec-label,.hmqz-divider,.hmqz-restart{animation:none!important;}',
+    '}'
   ].join('');
 
   /* ══ Open / Close ══ */
@@ -336,7 +418,8 @@
 
     el.m.querySelector('.hmqz-x').onclick = close;
 
-    el.m.querySelectorAll('.hmqz-row').forEach(function (row) {
+    el.m.querySelectorAll('.hmqz-row').forEach(function (row, i) {
+      row.style.setProperty('--hmqz-i', i);
       row.onclick = function () {
         el.m.querySelectorAll('.hmqz-row').forEach(function (r) { r.classList.remove('sel'); });
         row.classList.add('sel');
