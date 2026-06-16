@@ -1,149 +1,142 @@
 /* ─────────────────────────────────────────────────────────
-   nq-quiz.js  v1.3.0 — نقوة النخيل
-   Premium product concierge — auto-shows 5s, once per session
-   No green SaaS / no progress bars / no radio buttons
+   nq-quiz.js  v2.0.0 — hamtaro.sa
+   Product concierge — auto-shows 5s, once per session
+   Centered modal · list-row layout · RTL Arabic
 ───────────────────────────────────────────────────────── */
 (function () {
   'use strict';
 
-  var SK = 'nqz_seen';
+  var SK = 'hmqz_seen';
   if (sessionStorage.getItem(SK)) return;
 
-  /* ══════════════════════════════════════════════
-     TOKENS
-  ══════════════════════════════════════════════ */
-  var C = {
-    white  : '#FFFFFF',
-    cream  : '#F8F6F2',
-    cream2 : '#FFF9F1',
-    bg     : '#F3EEE7',
-    ink    : '#1A1612',
-    ink2   : '#5A5048',
-    ink3   : '#9C8E82',
-    accent : '#2D1B12',
-    gold   : '#C4922A',
-    border : '#E4DDD5',
-    selBd  : '#D7C8B3',
-    shadow : '0 40px 120px rgba(45,27,18,0.14)'
-  };
+  /* ══ Store ══ */
+  var CDN   = 'https://cdn.salla.sa/zvoeKA/';
+  var STORE = 'https://hamtaro.sa';
 
-  /* ══════════════════════════════════════════════
-     PRODUCTS — real CDN images from naquatalnakhil
-  ══════════════════════════════════════════════ */
-  var CDN = 'https://cdn.salla.sa/AzvOOZ/';
-  var STORE = 'https://naquatalnakhil.com';
-
+  /* ══ Products ══ */
   var PRODUCTS = [
     {
-      key  : 'sukari',
-      name : 'سكري مفتل',
-      sub  : 'درجة أولى من القصيم',
+      key  : 'mostRequested',
+      name : 'بوكس الأكثر طلباً',
+      sub  : 'أكثر من 30 قطعة',
       badge: 'الأكثر طلباً',
-      desc : 'تمر سكري صافي طري بحلاوة طبيعية — أكثر منتجاتنا مبيعاً للضيافة والتذوق اليومي.',
-      price: 90,
-      cur  : 'ريال',
-      url  : STORE + '/category/OlBOmK',
-      img  : CDN + '6e8e1b9d-244f-435d-a154-19bb184aa57e-500x333.33333333333-Emm0WEkiJ5AXpzHmvmT3DoJAmQYG2deMhW6x1inA.jpg',
-      s    : { gift:1, hosting:3, personal:3, cheap:3, mid:2, premium:0 }
+      desc : 'بوكس شامل يضم طعاماً ومكافآت ورملاً عالي الامتصاص — الاختيار المجرب من آلاف العملاء.',
+      price: '195',
+      cur  : 'ر.س',
+      url  : STORE + '/بوكس-الأكثر-طلباً/p1577619451',
+      img  : CDN + 'e26fa770-6410-4605-9d03-51bc0d37a414-400x500-k1W3eSM6MMYUwUMgHfkkHUd0PRKeohemmnHNv6CJ.png',
+      s    : { adult:3, variety:3, value:2, kitten:0, sterilised:0, health:1 }
     },
     {
-      key  : 'tamriya',
-      name : 'تمرية',
-      sub  : 'تمور محشوة بالمكسرات',
-      badge: 'هدية راقية',
-      desc : 'تمور مختارة محشوة بالمكسرات والفواكه في علب هدايا أنيقة — تليق بكل مناسبة.',
-      price: 150,
-      cur  : 'ريال',
-      url  : STORE,
-      img  : CDN + '7ebc281e-ec15-4532-bd78-41318a6632a1-500x500-0FYNiNh0GaigEWHqu4OWKrVtedvqZU8vvTEDYxb8.jpg',
-      s    : { gift:3, hosting:2, personal:1, cheap:1, mid:3, premium:1 }
+      key  : 'kittenEcon',
+      name : 'بوكس الكيتن الاقتصادي',
+      sub  : '16 قطعة طعام رطب',
+      badge: 'للكيتن',
+      desc : '16 ظرف طعام رطب مخصص للقطط الصغيرة — غني بالطاقة والبروتين لنمو صحي سليم.',
+      price: '95',
+      cur  : 'ر.س',
+      url  : STORE + '/بوكس-الكيتن-الاقتصادي/p1450244745',
+      img  : CDN + '450d1e57-c845-4929-96ac-561960452fe4-400x500-5fMdzTFSUV0PQrLgGSKqyuDdLdDz1D7LJLo83RkG.jpg',
+      s    : { kitten:3, value:3, variety:2, adult:0, sterilised:0, health:1 }
     },
     {
-      key  : 'bestseller',
-      name : 'الأكثر طلباً',
-      sub  : 'تشكيلة مختارة بعناية',
-      badge: 'الأفخر والأرقى',
-      desc : 'أرقى تشكيلة تمور سعودية مختارة بعناية في تغليف ملكي فاخر — لأصحاب الذوق الرفيع.',
-      price: 250,
-      cur  : 'ريال',
-      url  : STORE,
-      img  : CDN + 'bda66ea4-7de1-4e04-bf8d-1683c97c4493-500x333.251953125-cGp8etEu9pjABDsXj7igjjvgueUbkHU1PvfmRk0E.jpg',
-      s    : { gift:2, hosting:1, personal:0, cheap:0, mid:1, premium:3 }
+      key  : 'sterilised',
+      name : 'البوكس التوفيري للمعقمة',
+      sub  : '30 قطعة جاف ورطب',
+      badge: 'للمعقمة',
+      desc : 'تركيبة متخصصة تساعد على التحكم في الوزن ودعم صحة المسالك البولية بعد التعقيم.',
+      price: '222',
+      cur  : 'ر.س',
+      url  : STORE + '/البوكس-التوفيري-للقطط-المعقمة/p1546392188',
+      img  : CDN + 'f66a5472-1c91-4426-bf28-80b23d09d7fd-400x500-J5GqSz35qBjMXJucacQLz73phNleEZFAOD7mheYN.jpg',
+      s    : { sterilised:3, health:3, value:1, kitten:0, adult:1, variety:1 }
     }
   ];
 
-  /* ══════════════════════════════════════════════
-     QUESTIONS
-  ══════════════════════════════════════════════ */
+  /* ══ Icons ══ */
+  var IC_PAW =
+    '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' +
+    '<ellipse cx="12" cy="15.5" rx="4.5" ry="3.5"/>' +
+    '<circle cx="8.5" cy="9" r="1.5"/><circle cx="12" cy="7" r="1.5"/><circle cx="15.5" cy="9" r="1.5"/>' +
+    '<circle cx="6.5" cy="12.5" r="1.1"/><circle cx="17.5" cy="12.5" r="1.1"/>' +
+    '</svg>';
+
+  var IC_CAT =
+    '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">' +
+    '<path d="M5 8.5v5C5 17.6 8.1 20 12 20s7-2.4 7-6.5v-5L16.2 5 15 8.2C14.1 8 13.1 7.8 12 7.8c-1.1 0-2.1.2-3 .4L7.8 5z"/>' +
+    '<circle cx="9.5" cy="13.5" r=".7" fill="currentColor" stroke="none"/>' +
+    '<circle cx="14.5" cy="13.5" r=".7" fill="currentColor" stroke="none"/>' +
+    '<path d="M10.5 16q1.5 1 3 0"/>' +
+    '</svg>';
+
+  var IC_SHIELD =
+    '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' +
+    '<path d="M12 3L4 7v6c0 4.4 3.4 7.7 8 9 4.6-1.3 8-4.6 8-9V7z"/>' +
+    '<path d="M9 12h6M12 9v6"/>' +
+    '</svg>';
+
+  var IC_COIN =
+    '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' +
+    '<circle cx="12" cy="12" r="8"/>' +
+    '<path d="M12 7v10M9.5 9.5h3.5a2 2 0 010 4H9.5M9.5 13.5H14"/>' +
+    '</svg>';
+
+  var IC_GRID =
+    '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' +
+    '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/>' +
+    '<rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>' +
+    '</svg>';
+
+  var IC_HEART =
+    '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' +
+    '<path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>' +
+    '</svg>';
+
+  var IC_X =
+    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">' +
+    '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>' +
+    '</svg>';
+
+  var IC_CHECK =
+    '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">' +
+    '<polyline points="20 6 9 17 4 12"/>' +
+    '</svg>';
+
+  var IC_ARR =
+    '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">' +
+    '<line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>' +
+    '</svg>';
+
+  /* ══ Questions ══ */
   var QUESTIONS = [
     {
-      id   : 'purpose',
-      text : 'ما الغرض من طلبك؟',
-      cols : 3,
-      opts : [
-        {
-          key  : 'gift',
-          label: 'هدية',
-          note : 'مناسبات وتقديم',
-          icon : '<svg viewBox="0 0 40 40" fill="none"><rect x="8" y="18" width="24" height="16" rx="3" stroke="#2D1B12" stroke-width="1.8"/><path d="M8 22h24" stroke="#2D1B12" stroke-width="1.8"/><path d="M20 18v16" stroke="#2D1B12" stroke-width="1.8"/><path d="M20 18c0 0-4-6 0-8 2-1 4 1 4 4" stroke="#2D1B12" stroke-width="1.8" stroke-linecap="round"/><path d="M20 18c0 0 4-6 0-8-2-1-4 1-4 4" stroke="#2D1B12" stroke-width="1.8" stroke-linecap="round"/></svg>',
-          tags : ['gift']
-        },
-        {
-          key  : 'hosting',
-          label: 'ضيافة',
-          note : 'ضيافة منزل أو عمل',
-          icon : '<svg viewBox="0 0 40 40" fill="none"><path d="M12 28c0-4.4 3.6-8 8-8s8 3.6 8 8" stroke="#2D1B12" stroke-width="1.8" stroke-linecap="round"/><path d="M8 28h24" stroke="#2D1B12" stroke-width="1.8" stroke-linecap="round"/><path d="M20 20V14" stroke="#2D1B12" stroke-width="1.8" stroke-linecap="round"/><circle cx="20" cy="12" r="2.5" stroke="#2D1B12" stroke-width="1.8"/><path d="M15 16c1 1 3 2 5 2s4-1 5-2" stroke="#2D1B12" stroke-width="1.8" stroke-linecap="round"/></svg>',
-          tags : ['hosting']
-        },
-        {
-          key  : 'personal',
-          label: 'شخصي',
-          note : 'لنفسي أو للعائلة',
-          icon : '<svg viewBox="0 0 40 40" fill="none"><path d="M20 30s-10-6-10-13a7 7 0 0 1 10-6.32A7 7 0 0 1 30 17c0 7-10 13-10 13z" stroke="#2D1B12" stroke-width="1.8" stroke-linejoin="round"/></svg>',
-          tags : ['personal']
-        }
+      id  : 'type',
+      text: 'قطتك...',
+      note: 'اختر ما يناسب قطتك لنرشح لك الأنسب',
+      opts: [
+        { key:'kitten',     label:'كيتن',  note:'من شهرين فأكثر', icon:IC_PAW,    tags:['kitten']     },
+        { key:'adult',      label:'بالغة', note:'فوق السنة',        icon:IC_CAT,    tags:['adult']      },
+        { key:'sterilised', label:'معقمة', note:'بعد التعقيم',      icon:IC_SHIELD, tags:['sterilised'] }
       ]
     },
     {
-      id   : 'budget',
-      text : 'ما ميزانيتك التقريبية؟',
-      cols : 3,
-      opts : [
-        {
-          key  : 'cheap',
-          label: 'حتى 100',
-          note : 'ريال سعودي',
-          icon : '<svg viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="11" stroke="#2D1B12" stroke-width="1.8"/><path d="M20 14v12M17 17h4.5a2.5 2.5 0 0 1 0 5H17" stroke="#2D1B12" stroke-width="1.8" stroke-linecap="round"/></svg>',
-          tags : ['cheap']
-        },
-        {
-          key  : 'mid',
-          label: '100 – 200',
-          note : 'ريال سعودي',
-          icon : '<svg viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="11" stroke="#2D1B12" stroke-width="1.8"/><path d="M16 25l8-10M16 15h8M16 25h8" stroke="#2D1B12" stroke-width="1.8" stroke-linecap="round"/></svg>',
-          tags : ['mid']
-        },
-        {
-          key  : 'premium',
-          label: '200+',
-          note : 'ريال سعودي',
-          icon : '<svg viewBox="0 0 40 40" fill="none"><path d="M20 10l2.4 7.3H30l-6.2 4.5 2.4 7.2L20 24.5l-6.2 4.5 2.4-7.2L10 17.3h7.6z" stroke="#2D1B12" stroke-width="1.8" stroke-linejoin="round"/></svg>',
-          tags : ['premium']
-        }
+      id  : 'priority',
+      text: 'أهم شيء بالنسبة لك؟',
+      note: 'يساعدنا على اختيار البوكس المثالي',
+      opts: [
+        { key:'value',   label:'قيمة وسعر',  note:'أفضل صفقة بسعر مناسب',  icon:IC_COIN,  tags:['value']   },
+        { key:'variety', label:'تنوع ونكهات', note:'خيارات أكثر لقطتك',     icon:IC_GRID,  tags:['variety'] },
+        { key:'health',  label:'صحة وتخصص', note:'تغذية مدروسة ومتوازنة',  icon:IC_HEART, tags:['health']  }
       ]
     }
   ];
 
-  /* ══════════════════════════════════════════════
-     STATE
-  ══════════════════════════════════════════════ */
+  /* ══ State ══ */
   var step = 0;
   var tags = [];
   var el   = {};
 
-  /* ══════════════════════════════════════════════
-     SCORING
-  ══════════════════════════════════════════════ */
+  /* ══ Scoring ══ */
   function ranked() {
     return PRODUCTS.slice().sort(function (a, b) {
       var sa = tags.reduce(function (n, t) { return n + (a.s[t] || 0); }, 0);
@@ -152,282 +145,206 @@
     });
   }
 
-  /* ══════════════════════════════════════════════
-     ICONS
-  ══════════════════════════════════════════════ */
-  var IC_X =
-    '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
-
-  var IC_CHECK =
-    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
-
-  var IC_ARROW_LTR =
-    '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
-
-  /* ══════════════════════════════════════════════
-     CSS
-  ══════════════════════════════════════════════ */
+  /* ══ CSS ══ */
   var CSS = [
-    '@import url("https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap");',
+    '@import url("https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap");',
 
-    /* ── Backdrop ── */
-    '#nqz-bd{position:fixed;inset:0;',
-    'background:rgba(30,27,24,0.45);',
-    'backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);',
-    'z-index:9990;opacity:0;pointer-events:none;transition:opacity .35s ease;}',
-    '#nqz-bd.open{opacity:1;pointer-events:auto;}',
+    /* Backdrop */
+    '#hmqz-bd{position:fixed;inset:0;background:rgba(10,10,10,.46);',
+    'backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);',
+    'z-index:9990;opacity:0;pointer-events:none;transition:opacity .3s ease;}',
+    '#hmqz-bd.open{opacity:1;pointer-events:auto;}',
 
-    /* ── Modal ── */
-    '#nqz-modal{',
+    /* Modal — ALWAYS CENTERED */
+    '#hmqz-m{',
     'position:fixed;z-index:9991;',
-    'background:#FFFFFF;',
+    'top:50%;left:50%;',
+    'transform:translate(-50%,-50%) scale(.93);opacity:0;',
+    'width:min(500px,92vw);',
+    'max-height:88dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;',
+    'background:#FFFFFF;border-radius:20px;',
+    'box-shadow:0 32px 100px rgba(0,0,0,.2),0 2px 8px rgba(0,0,0,.06);',
     'direction:rtl;',
     'font-family:"Tajawal",system-ui,sans-serif;',
     '-webkit-font-smoothing:antialiased;',
-    /* mobile: bottom sheet */
-    'bottom:0;left:0;right:0;',
-    'border-radius:32px 32px 0 0;',
-    'max-height:96dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;',
-    'transform:translateY(100%);opacity:1;',
-    'transition:transform .46s cubic-bezier(.22,1,.36,1);',
-    'box-shadow:' + C.shadow + ';',
+    'transition:transform .42s cubic-bezier(.22,1,.36,1),opacity .28s ease;',
     '}',
-    '#nqz-modal.open{transform:translateY(0);}',
-    '#nqz-modal *{box-sizing:border-box;margin:0;padding:0;}',
-    '#nqz-modal a{text-decoration:none;}',
+    '#hmqz-m.open{transform:translate(-50%,-50%) scale(1);opacity:1;}',
+    '#hmqz-m *{box-sizing:border-box;margin:0;padding:0;}',
+    '#hmqz-m a{text-decoration:none;color:inherit;}',
 
-    /* ── Handle ── */
-    '.nqz-handle{width:36px;height:4px;background:#E4DDD5;border-radius:999px;margin:14px auto 0;}',
-
-    /* ── Header ── */
-    '.nqz-hdr{padding:20px 24px 0;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}',
-    '.nqz-hdr-text{}',
-    '.nqz-eyebrow{display:block;font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:' + C.ink3 + ';margin-bottom:4px;}',
-    '.nqz-title{font-size:clamp(18px,4.5vw,22px);font-weight:900;color:' + C.ink + ';letter-spacing:-.025em;line-height:1.15;}',
-    '.nqz-x{width:32px;height:32px;border-radius:50%;background:' + C.cream + ';border:none;cursor:pointer;',
-    'display:flex;align-items:center;justify-content:center;color:' + C.ink2 + ';flex-shrink:0;',
+    /* Header */
+    '.hmqz-hdr{padding:24px 22px 0;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}',
+    '.hmqz-hdr-inner{flex:1;min-width:0;}',
+    '.hmqz-eyebrow{font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#9CA3AF;display:block;margin-bottom:5px;}',
+    '.hmqz-title{font-size:20px;font-weight:900;color:#0D0D0D;letter-spacing:-.022em;line-height:1.2;}',
+    '.hmqz-hsub{font-size:13px;color:#6B7280;margin-top:5px;line-height:1.5;}',
+    '.hmqz-x{width:32px;height:32px;border-radius:50%;background:#F3F4F6;border:none;cursor:pointer;',
+    'display:flex;align-items:center;justify-content:center;color:#4B5563;flex-shrink:0;',
     'transition:background .2s,transform .2s;margin-top:2px;}',
-    '.nqz-x:hover{background:' + C.border + ';transform:scale(1.08);}',
+    '.hmqz-x:hover{background:#E5E7EB;transform:scale(1.08);}',
 
-    /* ── Body ── */
-    '.nqz-body{padding:24px 24px 40px;}',
+    /* Divider under header */
+    '.hmqz-hd{border:none;border-top:1px solid #F3F4F6;margin:18px 0 0;}',
 
-    /* ── Question screen ── */
-    '.nqz-q-label{display:block;font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:' + C.ink3 + ';margin-bottom:6px;}',
-    '.nqz-q-text{font-size:clamp(17px,4vw,20px);font-weight:800;color:' + C.ink + ';line-height:1.25;letter-spacing:-.02em;margin-bottom:18px;}',
+    /* Body */
+    '.hmqz-body{padding:0 22px 26px;}',
 
-    /* ── Card grid (3-col) ── */
-    '.nqz-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}',
+    /* Option rows */
+    '.hmqz-row{display:flex;align-items:center;gap:13px;padding:14px 15px;',
+    'border:1.5px solid #EAECEE;border-radius:14px;cursor:pointer;',
+    'transition:border-color .18s ease,background .18s ease;',
+    'background:#fff;width:100%;font-family:inherit;text-align:right;',
+    '-webkit-tap-highlight-color:transparent;user-select:none;margin-top:10px;}',
+    '.hmqz-row:first-child{margin-top:0;}',
+    '.hmqz-row:hover{border-color:#C4CAD1;background:#FAFAFA;}',
+    '.hmqz-row.sel{border-color:#1A6B3A;background:#EDF7F1;}',
 
-    /* ── Option card ── */
-    '.nqz-card{',
-    'display:flex;flex-direction:column;align-items:center;justify-content:center;',
-    'gap:10px;padding:20px 12px;',
-    'background:' + C.cream + ';',
-    'border:1.5px solid transparent;',
-    'border-radius:24px;cursor:pointer;',
-    'font-family:inherit;text-align:center;',
-    'position:relative;',
-    'transition:background .22s ease,border-color .22s ease,transform .28s cubic-bezier(.34,1.56,.64,1),box-shadow .22s ease;',
-    '-webkit-tap-highlight-color:transparent;user-select:none;',
-    '}',
-    '.nqz-card:hover{background:' + C.cream2 + ';border-color:' + C.selBd + ';transform:translateY(-3px);box-shadow:0 8px 28px rgba(45,27,18,.07);}',
-    '.nqz-card.sel{background:' + C.cream2 + ';border-color:' + C.selBd + ';transform:translateY(-3px);box-shadow:0 10px 32px rgba(45,27,18,.09);}',
+    /* Icon box */
+    '.hmqz-row-icon{width:46px;height:46px;border-radius:12px;background:#F3F4F6;',
+    'display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#374151;',
+    'transition:background .18s,color .18s;}',
+    '.hmqz-row.sel .hmqz-row-icon{background:#D1FAE5;color:#1A6B3A;}',
 
-    /* check pip on selected */
-    '.nqz-card-check{',
-    'position:absolute;top:10px;left:10px;',
-    'width:22px;height:22px;border-radius:50%;',
-    'background:' + C.accent + ';color:#fff;',
+    /* Row text */
+    '.hmqz-row-text{flex:1;min-width:0;}',
+    '.hmqz-row-label{font-size:15px;font-weight:700;color:#0D0D0D;display:block;line-height:1.3;}',
+    '.hmqz-row-note{font-size:12px;color:#9CA3AF;display:block;margin-top:2px;}',
+
+    /* Radio dot */
+    '.hmqz-row-radio{width:22px;height:22px;border-radius:50%;border:2px solid #D1D5DB;flex-shrink:0;',
     'display:flex;align-items:center;justify-content:center;',
-    'opacity:0;transform:scale(.6);',
-    'transition:opacity .2s,transform .25s cubic-bezier(.34,1.56,.64,1);',
-    '}',
-    '.nqz-card.sel .nqz-card-check{opacity:1;transform:scale(1);}',
+    'transition:border-color .18s,background .18s;}',
+    '.hmqz-row.sel .hmqz-row-radio{border-color:#1A6B3A;background:#1A6B3A;}',
+    '.hmqz-row-radio svg{display:none;color:#fff;}',
+    '.hmqz-row.sel .hmqz-row-radio svg{display:block;}',
 
-    '.nqz-card-icon{width:44px;height:44px;display:flex;align-items:center;justify-content:center;}',
-    '.nqz-card-icon svg{width:40px;height:40px;}',
-    '.nqz-card-label{font-size:14px;font-weight:800;color:' + C.ink + ';line-height:1.2;}',
-    '.nqz-card-note{font-size:11px;color:' + C.ink3 + ';font-weight:400;}',
-
-    /* screen transition */
-    '.nqz-screen{transition:opacity .22s ease,transform .22s ease;}',
-    '.nqz-screen.out{opacity:0;transform:translateX(10px);pointer-events:none;}',
+    /* Screen fade */
+    '.hmqz-screen{transition:opacity .2s ease,transform .2s ease;}',
+    '.hmqz-screen.out{opacity:0;transform:translateX(8px);pointer-events:none;}',
 
     /* ── Result ── */
-    '.nqz-r-label{display:block;font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:' + C.gold + ';margin-bottom:6px;}',
-    '.nqz-r-title{font-size:clamp(18px,4vw,21px);font-weight:900;color:' + C.ink + ';letter-spacing:-.02em;line-height:1.2;margin-bottom:18px;}',
+    '.hmqz-rec-label{font-size:10px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;',
+    'color:#1A6B3A;display:block;margin-bottom:12px;padding-top:4px;}',
 
-    /* primary product card */
-    '.nqz-primary{',
-    'display:flex;gap:16px;align-items:stretch;',
-    'background:' + C.cream + ';border-radius:24px;overflow:hidden;',
-    'margin-bottom:12px;',
-    '}',
-    '.nqz-primary-img{',
-    'width:42%;flex-shrink:0;',
-    'background:' + C.bg + ';',
-    'position:relative;overflow:hidden;',
-    'min-height:200px;',
-    '}',
-    '.nqz-primary-img img{width:100%;height:100%;object-fit:cover;display:block;',
-    'transition:transform .5s ease;}',
-    '.nqz-primary:hover .nqz-primary-img img{transform:scale(1.04);}',
-    '.nqz-primary-info{flex:1;padding:20px 16px 20px 0;display:flex;flex-direction:column;min-width:0;}',
-    '.nqz-rec-pill{display:inline-flex;align-items:center;gap:5px;',
-    'font-size:10px;font-weight:800;letter-spacing:.06em;',
-    'color:#fff;background:' + C.accent + ';',
-    'padding:3px 10px;border-radius:999px;',
-    'margin-bottom:8px;width:fit-content;}',
-    '.nqz-primary-badge{font-size:10px;font-weight:700;color:' + C.gold + ';',
-    'background:rgba(196,146,42,.1);padding:2px 8px;border-radius:999px;',
-    'margin-bottom:8px;display:block;width:fit-content;}',
-    '.nqz-primary-name{font-size:clamp(18px,4vw,22px);font-weight:900;color:' + C.ink + ';',
-    'letter-spacing:-.025em;line-height:1.15;margin-bottom:2px;}',
-    '.nqz-primary-sub{font-size:12px;color:' + C.ink3 + ';margin-bottom:8px;}',
-    '.nqz-primary-desc{font-size:12px;color:' + C.ink2 + ';line-height:1.7;flex:1;margin-bottom:12px;}',
-    '.nqz-primary-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;}',
-    '.nqz-price{font-size:20px;font-weight:900;color:' + C.ink + ';letter-spacing:-.02em;direction:ltr;display:inline-block;}',
-    '.nqz-price em{font-size:11px;font-weight:400;font-style:normal;color:' + C.ink3 + ';margin-right:2px;}',
-    '.nqz-cta{display:inline-flex;align-items:center;gap:6px;',
-    'height:36px;padding:0 16px;',
-    'background:' + C.accent + ';color:#F8F6F2;',
+    /* Primary card */
+    '.hmqz-primary{display:flex;gap:15px;align-items:center;',
+    'border:1.5px solid #1A6B3A;border-radius:16px;background:#F0FAF4;',
+    'padding:16px;margin-bottom:14px;transition:background .2s,box-shadow .2s;}',
+    '.hmqz-primary:hover{background:#E6F7EE;box-shadow:0 4px 18px rgba(26,107,58,.12);}',
+    '.hmqz-primary-img{width:82px;height:82px;border-radius:12px;overflow:hidden;flex-shrink:0;background:#D1FAE5;}',
+    '.hmqz-primary-img img{width:100%;height:100%;object-fit:cover;display:block;}',
+    '.hmqz-primary-info{flex:1;min-width:0;}',
+    '.hmqz-rec-pill{display:inline-flex;align-items:center;gap:4px;',
+    'font-size:10px;font-weight:800;color:#fff;background:#1A6B3A;',
+    'padding:3px 9px 3px 7px;border-radius:999px;margin-bottom:7px;letter-spacing:.04em;}',
+    '.hmqz-primary-name{font-size:16px;font-weight:800;color:#0D0D0D;line-height:1.25;margin-bottom:2px;}',
+    '.hmqz-primary-sub{font-size:12px;color:#6B7280;margin-bottom:8px;}',
+    '.hmqz-primary-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;}',
+    '.hmqz-price{font-size:17px;font-weight:900;color:#0D0D0D;direction:ltr;display:inline-block;}',
+    '.hmqz-price em{font-size:11px;font-weight:400;font-style:normal;color:#9CA3AF;margin-right:2px;}',
+    '.hmqz-cta{display:inline-flex;align-items:center;gap:5px;',
+    'height:34px;padding:0 14px;background:#1A6B3A;color:#fff;',
     'border-radius:999px;font-size:12px;font-weight:700;font-family:inherit;',
-    'white-space:nowrap;flex-shrink:0;cursor:pointer;border:none;',
-    'transition:background .2s,transform .2s;}',
-    '.nqz-cta:hover{background:#1a0e08;transform:translateY(-1px);}',
+    'white-space:nowrap;transition:background .2s,transform .15s;}',
+    '.hmqz-primary:hover .hmqz-cta{background:#155E32;transform:translateX(-2px);}',
 
-    /* secondary products */
-    '.nqz-alts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}',
-    '.nqz-alt{',
-    'display:flex;flex-direction:column;',
-    'background:' + C.cream + ';border-radius:20px;overflow:hidden;',
-    'transition:transform .25s ease,box-shadow .25s ease;',
-    '}',
-    '.nqz-alt:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(45,27,18,.08);}',
-    '.nqz-alt-img{height:110px;background:' + C.bg + ';overflow:hidden;flex-shrink:0;}',
-    '.nqz-alt-img img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .4s ease;}',
-    '.nqz-alt:hover .nqz-alt-img img{transform:scale(1.06);}',
-    '.nqz-alt-body{padding:12px 12px 14px;flex:1;display:flex;flex-direction:column;gap:2px;}',
-    '.nqz-alt-badge{font-size:9px;font-weight:700;color:' + C.gold + ';text-transform:uppercase;letter-spacing:.08em;}',
-    '.nqz-alt-name{font-size:13px;font-weight:800;color:' + C.ink + ';line-height:1.25;}',
-    '.nqz-alt-sub{font-size:10px;color:' + C.ink3 + ';}',
-    '.nqz-alt-row{display:flex;align-items:center;justify-content:space-between;margin-top:auto;padding-top:8px;}',
-    '.nqz-alt-price{font-size:14px;font-weight:800;color:' + C.ink + ';}',
-    '.nqz-alt-price em{font-size:10px;font-weight:400;font-style:normal;color:' + C.ink3 + ';}',
-    '.nqz-alt-arr{width:26px;height:26px;border-radius:50%;background:' + C.border + ';',
-    'display:flex;align-items:center;justify-content:center;color:' + C.ink2 + ';flex-shrink:0;',
-    'transition:background .2s,color .2s;}',
-    '.nqz-alt:hover .nqz-alt-arr{background:' + C.accent + ';color:#fff;}',
+    /* Divider */
+    '.hmqz-divider{border:none;border-top:1px solid #F3F4F6;margin:0 0 14px;}',
 
-    /* restart */
-    '.nqz-restart{display:block;width:100%;text-align:center;',
-    'font-size:12px;color:' + C.ink3 + ';background:none;border:none;',
-    'cursor:pointer;font-family:inherit;padding:4px;transition:color .2s;}',
-    '.nqz-restart:hover{color:' + C.ink2 + ';}',
-    '.nqz-restart u{text-underline-offset:3px;}',
+    /* Alt rows */
+    '.hmqz-alt{display:flex;align-items:center;gap:12px;padding:12px 14px;',
+    'border:1.5px solid #EAECEE;border-radius:14px;background:#fff;margin-bottom:10px;',
+    'transition:border-color .18s,background .18s,transform .2s;}',
+    '.hmqz-alt:last-of-type{margin-bottom:0;}',
+    '.hmqz-alt:hover{border-color:#C4CAD1;background:#FAFAFA;transform:translateX(-2px);}',
+    '.hmqz-alt-img{width:54px;height:54px;border-radius:10px;overflow:hidden;flex-shrink:0;background:#F3F4F6;}',
+    '.hmqz-alt-img img{width:100%;height:100%;object-fit:cover;display:block;}',
+    '.hmqz-alt-text{flex:1;min-width:0;}',
+    '.hmqz-alt-badge{font-size:10px;font-weight:700;color:#1A6B3A;display:block;margin-bottom:2px;}',
+    '.hmqz-alt-name{font-size:13.5px;font-weight:700;color:#0D0D0D;line-height:1.25;}',
+    '.hmqz-alt-sub{font-size:11px;color:#9CA3AF;margin-top:1px;}',
+    '.hmqz-alt-price{font-size:14px;font-weight:800;color:#0D0D0D;white-space:nowrap;flex-shrink:0;}',
+    '.hmqz-alt-price em{font-size:10px;font-weight:400;font-style:normal;color:#9CA3AF;margin-right:1px;}',
+    '.hmqz-alt-arr{width:28px;height:28px;border-radius:50%;background:#F3F4F6;',
+    'display:flex;align-items:center;justify-content:center;color:#6B7280;flex-shrink:0;',
+    'transition:background .18s,color .18s;}',
+    '.hmqz-alt:hover .hmqz-alt-arr{background:#1A6B3A;color:#fff;}',
 
-    /* ── Desktop: centered modal ── */
-    '@media(min-width:600px){',
-    '#nqz-modal{',
-    'bottom:auto;top:50%;left:50%;right:auto;',
-    'width:min(760px,92vw);',
-    'border-radius:40px;',
-    'transform:translate(-50%,-46%) scale(.96);',
-    'max-height:calc(100dvh - 40px);',
-    'opacity:0;',
-    'transition:transform .42s cubic-bezier(.22,1,.36,1),opacity .32s ease;',
-    '}',
-    '#nqz-modal.open{transform:translate(-50%,-50%) scale(1);opacity:1;}',
-    '.nqz-handle{display:none;}',
-    '.nqz-hdr{padding:32px 36px 0;}',
-    '.nqz-title{font-size:clamp(20px,2.5vw,26px);}',
-    '.nqz-body{padding:28px 36px 44px;}',
-    '.nqz-grid{gap:14px;}',
-    '.nqz-card{padding:26px 16px;}',
-    '.nqz-card-icon{width:52px;height:52px;}',
-    '.nqz-card-icon svg{width:48px;height:48px;}',
-    '.nqz-card-label{font-size:15px;}',
-    '.nqz-primary{border-radius:28px;}',
-    '.nqz-primary-img{width:38%;min-height:240px;}',
-    '.nqz-primary-info{padding:24px 20px 24px 0;}',
-    '.nqz-primary-name{font-size:clamp(20px,2.8vw,28px);}',
-    '.nqz-price{font-size:24px;}',
-    '}'
+    /* Restart */
+    '.hmqz-restart{display:block;width:100%;text-align:center;',
+    'font-size:12px;color:#9CA3AF;background:none;border:none;',
+    'cursor:pointer;font-family:inherit;padding:14px 0 0;transition:color .2s;}',
+    '.hmqz-restart:hover{color:#6B7280;}',
+    '.hmqz-restart u{text-underline-offset:3px;}'
   ].join('');
 
-  /* ══════════════════════════════════════════════
-     OPEN / CLOSE
-  ══════════════════════════════════════════════ */
+  /* ══ Open / Close ══ */
   function open() {
     requestAnimationFrame(function () {
       el.bd.classList.add('open');
-      el.modal.classList.add('open');
+      el.m.classList.add('open');
     });
   }
 
   function close() {
     sessionStorage.setItem(SK, '1');
     el.bd.classList.remove('open');
-    el.modal.classList.remove('open');
+    el.m.classList.remove('open');
   }
 
-  /* ══════════════════════════════════════════════
-     RENDER
-  ══════════════════════════════════════════════ */
+  /* ══ Render ══ */
   function render() {
     step < QUESTIONS.length ? renderQ(step) : renderResult();
   }
 
-  function hdrHTML(eyebrow, title) {
+  function hdr(eyebrow, title, sub) {
     return (
-      '<div class="nqz-hdr">' +
-        '<div class="nqz-hdr-text">' +
-          '<span class="nqz-eyebrow">' + eyebrow + '</span>' +
-          '<div class="nqz-title">' + title + '</div>' +
+      '<div class="hmqz-hdr">' +
+        '<div class="hmqz-hdr-inner">' +
+          '<span class="hmqz-eyebrow">' + eyebrow + '</span>' +
+          '<div class="hmqz-title">' + title + '</div>' +
+          (sub ? '<div class="hmqz-hsub">' + sub + '</div>' : '') +
         '</div>' +
-        '<button class="nqz-x" type="button" aria-label="إغلاق">' + IC_X + '</button>' +
-      '</div>'
+        '<button class="hmqz-x" type="button" aria-label="إغلاق">' + IC_X + '</button>' +
+      '</div>' +
+      '<hr class="hmqz-hd">'
     );
   }
 
   function renderQ(qi) {
     var q = QUESTIONS[qi];
 
-    var cardsHtml = q.opts.map(function (o) {
+    var rowsHtml = q.opts.map(function (o) {
       return (
-        '<button class="nqz-card" data-key="' + o.key + '" data-tags="' + o.tags.join(',') + '" type="button">' +
-          '<div class="nqz-card-check">' + IC_CHECK + '</div>' +
-          '<div class="nqz-card-icon">' + o.icon + '</div>' +
-          '<span class="nqz-card-label">' + o.label + '</span>' +
-          '<span class="nqz-card-note">' + o.note + '</span>' +
+        '<button class="hmqz-row" data-key="' + o.key + '" data-tags="' + o.tags.join(',') + '" type="button">' +
+          '<div class="hmqz-row-icon">' + o.icon + '</div>' +
+          '<div class="hmqz-row-text">' +
+            '<span class="hmqz-row-label">' + o.label + '</span>' +
+            '<span class="hmqz-row-note">' + o.note + '</span>' +
+          '</div>' +
+          '<div class="hmqz-row-radio">' + IC_CHECK + '</div>' +
         '</button>'
       );
     }).join('');
 
-    el.modal.innerHTML =
-      '<div class="nqz-handle"></div>' +
-      hdrHTML('نقوة النخيل · ' + (qi + 1) + ' / ' + QUESTIONS.length, q.text) +
-      '<div class="nqz-body">' +
-        '<div class="nqz-screen">' +
-          '<div class="nqz-grid">' + cardsHtml + '</div>' +
-        '</div>' +
+    el.m.innerHTML =
+      hdr('hamtaro · ' + (qi + 1) + ' / ' + QUESTIONS.length, q.text, q.note) +
+      '<div class="hmqz-body">' +
+        '<div class="hmqz-screen">' + rowsHtml + '</div>' +
       '</div>';
 
-    el.modal.querySelector('.nqz-x').onclick = close;
+    el.m.querySelector('.hmqz-x').onclick = close;
 
-    el.modal.querySelectorAll('.nqz-card').forEach(function (card) {
-      card.onclick = function () {
-        /* highlight */
-        el.modal.querySelectorAll('.nqz-card').forEach(function (c) { c.classList.remove('sel'); });
-        card.classList.add('sel');
-        /* collect tags */
-        var t = card.getAttribute('data-tags').split(',');
+    el.m.querySelectorAll('.hmqz-row').forEach(function (row) {
+      row.onclick = function () {
+        el.m.querySelectorAll('.hmqz-row').forEach(function (r) { r.classList.remove('sel'); });
+        row.classList.add('sel');
+        var t = row.getAttribute('data-tags').split(',');
         tags = tags.concat(t);
-        /* animate out then advance */
-        var screen = el.modal.querySelector('.nqz-screen');
+        var screen = el.m.querySelector('.hmqz-screen');
         if (screen) screen.classList.add('out');
-        setTimeout(function () { step++; render(); }, 300);
+        setTimeout(function () { step++; render(); }, 280);
       };
     });
   }
@@ -438,88 +355,79 @@
     var alt1 = list[1];
     var alt2 = list[2];
 
-    el.modal.innerHTML =
-      '<div class="nqz-handle"></div>' +
-      hdrHTML('اخترنا لك بعناية', 'إليك أنسب التمور لك') +
-      '<div class="nqz-body">' +
-        '<div class="nqz-screen">' +
+    el.m.innerHTML =
+      hdr('اخترنا لك بعناية', 'البوكس الأنسب لقطتك', null) +
+      '<div class="hmqz-body">' +
+        '<div class="hmqz-screen">' +
+          '<span class="hmqz-rec-label">الأنسب لك</span>' +
 
-          /* Primary */
-          '<a class="nqz-primary" href="' + top.url + '">' +
-            '<div class="nqz-primary-img">' +
+          '<a class="hmqz-primary" href="' + top.url + '">' +
+            '<div class="hmqz-primary-img">' +
               '<img src="' + top.img + '" alt="' + top.name + '" loading="eager">' +
             '</div>' +
-            '<div class="nqz-primary-info">' +
-              '<span class="nqz-rec-pill">' + IC_CHECK + ' الأنسب لك</span>' +
-              '<span class="nqz-primary-badge">' + top.badge + '</span>' +
-              '<div class="nqz-primary-name">' + top.name + '</div>' +
-              '<div class="nqz-primary-sub">' + top.sub + '</div>' +
-              '<div class="nqz-primary-desc">' + top.desc + '</div>' +
-              '<div class="nqz-primary-foot">' +
-                '<span class="nqz-price">' + top.price + ' <em>' + top.cur + '</em></span>' +
-                '<span class="nqz-cta">اكتشف ' + IC_ARROW_LTR + '</span>' +
+            '<div class="hmqz-primary-info">' +
+              '<span class="hmqz-rec-pill">' + IC_CHECK + ' الأنسب لك</span>' +
+              '<div class="hmqz-primary-name">' + top.name + '</div>' +
+              '<div class="hmqz-primary-sub">' + top.sub + '</div>' +
+              '<div class="hmqz-primary-foot">' +
+                '<span class="hmqz-price">' + top.price + ' <em>' + top.cur + '</em></span>' +
+                '<span class="hmqz-cta">اكتشف ' + IC_ARR + '</span>' +
               '</div>' +
             '</div>' +
           '</a>' +
 
-          /* Alternatives */
-          '<div class="nqz-alts">' +
-            altCard(alt1) +
-            altCard(alt2) +
-          '</div>' +
+          '<hr class="hmqz-divider">' +
+          altRow(alt1) +
+          altRow(alt2) +
 
-          '<button class="nqz-restart" type="button"><u>إعادة الاختيار</u></button>' +
-
+          '<button class="hmqz-restart" type="button"><u>إعادة الاختيار</u></button>' +
         '</div>' +
       '</div>';
 
-    el.modal.querySelector('.nqz-x').onclick = close;
-    el.modal.querySelector('.nqz-restart').onclick = function () {
+    el.m.querySelector('.hmqz-x').onclick = close;
+    el.m.querySelector('.hmqz-restart').onclick = function () {
       step = 0; tags = [];
-      var screen = el.modal.querySelector('.nqz-screen');
+      var screen = el.m.querySelector('.hmqz-screen');
       if (screen) screen.classList.add('out');
-      setTimeout(render, 280);
+      setTimeout(render, 250);
     };
   }
 
-  function altCard(p) {
+  function altRow(p) {
     return (
-      '<a class="nqz-alt" href="' + p.url + '">' +
-        '<div class="nqz-alt-img"><img src="' + p.img + '" alt="' + p.name + '" loading="lazy"></div>' +
-        '<div class="nqz-alt-body">' +
-          '<span class="nqz-alt-badge">' + p.badge + '</span>' +
-          '<div class="nqz-alt-name">' + p.name + '</div>' +
-          '<div class="nqz-alt-sub">' + p.sub + '</div>' +
-          '<div class="nqz-alt-row">' +
-            '<span class="nqz-alt-price">' + p.price + ' <em>' + p.cur + '</em></span>' +
-            '<span class="nqz-alt-arr">' + IC_ARROW_LTR + '</span>' +
-          '</div>' +
+      '<a class="hmqz-alt" href="' + p.url + '">' +
+        '<div class="hmqz-alt-img"><img src="' + p.img + '" alt="' + p.name + '" loading="lazy"></div>' +
+        '<div class="hmqz-alt-text">' +
+          '<span class="hmqz-alt-badge">' + p.badge + '</span>' +
+          '<div class="hmqz-alt-name">' + p.name + '</div>' +
+          '<div class="hmqz-alt-sub">' + p.sub + '</div>' +
         '</div>' +
+        '<span class="hmqz-alt-price">' + p.price + ' <em>' + p.cur + '</em></span>' +
+        '<span class="hmqz-alt-arr">' + IC_ARR + '</span>' +
       '</a>'
     );
   }
 
-  /* ══════════════════════════════════════════════
-     INIT
-  ══════════════════════════════════════════════ */
+  /* ══ Init ══ */
   function init() {
-    if (!document.getElementById('nqz-css')) {
-      var s = document.createElement('style');
-      s.id = 'nqz-css'; s.textContent = CSS;
-      document.head.appendChild(s);
-    }
+    if (document.getElementById('hmqz-css')) return;
+
+    var s = document.createElement('style');
+    s.id = 'hmqz-css'; s.textContent = CSS;
+    document.head.appendChild(s);
 
     el.bd = document.createElement('div');
-    el.bd.id = 'nqz-bd';
+    el.bd.id = 'hmqz-bd';
     el.bd.onclick = close;
     document.body.appendChild(el.bd);
 
-    el.modal = document.createElement('div');
-    el.modal.id = 'nqz-modal';
-    el.modal.setAttribute('dir', 'rtl');
-    el.modal.setAttribute('role', 'dialog');
-    el.modal.setAttribute('aria-modal', 'true');
-    document.body.appendChild(el.modal);
+    el.m = document.createElement('div');
+    el.m.id = 'hmqz-m';
+    el.m.setAttribute('dir', 'rtl');
+    el.m.setAttribute('role', 'dialog');
+    el.m.setAttribute('aria-modal', 'true');
+    el.m.setAttribute('aria-label', 'ترشيح المنتج');
+    document.body.appendChild(el.m);
 
     render();
     setTimeout(open, 5000);
