@@ -9,8 +9,10 @@
 (function () {
   'use strict';
 
-  var SK = 'hmqz_seen';
-  if (localStorage.getItem(SK)) return;
+  var SK   = 'hmqz_seen';
+  var WEEK = 7 * 24 * 60 * 60 * 1000;
+  var stored = localStorage.getItem(SK);
+  if (stored && (Date.now() - parseInt(stored, 10)) < WEEK) return;
 
   var CDN   = 'https://cdn.salla.sa/zvoeKA/';
   var STORE = 'https://hamtaro.sa';
@@ -202,9 +204,13 @@
     });
   }
   function close() {
-    localStorage.setItem(SK,'1');
     el.bd.classList.remove('open');
     setModalClosed();
+  }
+
+  function suppress() {
+    localStorage.setItem(SK, Date.now().toString());
+    close();
   }
 
   /* ══ Gradient cap for question screens ══ */
@@ -230,7 +236,10 @@
         '<div class="hmqz-cap-content" style="position:relative;z-index:1;">' +
           '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">' +
             '<div style="display:flex;gap:5px;align-items:center;">' + dots + '</div>' +
-            '<button class="hmqz-x hmqz-x-cap" type="button" aria-label="إغلاق" style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.15);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0;transition:background .2s;">' + IC_X + '</button>' +
+            '<div style="display:flex;align-items:center;gap:8px;">' +
+              '<button class="hmqz-suppress-cap" type="button" style="font-size:10.5px;color:rgba(255,255,255,.45);background:none;border:none;cursor:pointer;font-family:Tajawal,system-ui,sans-serif;padding:0;transition:color .2s;white-space:nowrap;">لا تظهر مجدداً</button>' +
+              '<button class="hmqz-x hmqz-x-cap" type="button" aria-label="إغلاق" style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.15);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0;transition:background .2s;">' + IC_X + '</button>' +
+            '</div>' +
           '</div>' +
           '<span style="font-size:10px;font-weight:bold;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.55);display:block;margin-bottom:6px;font-family:Tajawal,system-ui,sans-serif;">hamtaro · '+(qi+1)+' / '+QUESTIONS.length+'</span>' +
           '<div style="font-size:24px;font-weight:bold;color:#FFFFFF;letter-spacing:-.02em;line-height:1.2;font-family:Tajawal,system-ui,sans-serif;margin-bottom:5px;">'+q.text+'</div>' +
@@ -269,6 +278,7 @@
       '</div>';
 
     el.m.querySelector('.hmqz-x-cap').onclick=close;
+    el.m.querySelector('.hmqz-suppress-cap').onclick=suppress;
     fixFW(el.m);
 
     el.m.querySelectorAll('.hmqz-row').forEach(function(row){
@@ -373,7 +383,10 @@
 
           altCard(alt1)+altCard(alt2)+
 
-          '<button class="hmqz-restart" type="button" style="display:block;width:100%;text-align:center;font-size:12px;color:#9CA3AF;background:none;border:none;cursor:pointer;font-family:Tajawal,system-ui,sans-serif;padding:10px 0 0;transition:color .2s;"><u style="text-underline-offset:3px;">إعادة الاختيار</u></button>' +
+          '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0 0;">' +
+            '<button class="hmqz-restart" type="button" style="font-size:12px;color:#9CA3AF;background:none;border:none;cursor:pointer;font-family:Tajawal,system-ui,sans-serif;padding:0;transition:color .2s;"><u style="text-underline-offset:3px;">إعادة الاختيار</u></button>' +
+            '<button class="hmqz-suppress" type="button" style="font-size:11px;color:#C4C4C4;background:none;border:none;cursor:pointer;font-family:Tajawal,system-ui,sans-serif;padding:0;transition:color .2s;">لا تظهر مجدداً</button>' +
+          '</div>' +
         '</div>' +
       '</div>';
 
@@ -388,6 +401,7 @@
       if(screen){sp(screen,'opacity','0');sp(screen,'transform','translateX(10px)');}
       setTimeout(render,240);
     };
+    el.m.querySelector('.hmqz-suppress').onclick=suppress;
     fixFW(el.m);
   }
 
