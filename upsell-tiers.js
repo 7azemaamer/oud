@@ -813,9 +813,11 @@
         if (selectedTier) selectedTier.classList.remove('pe-selected');
         card.classList.add('pe-selected');
         selectedTier = card;
-        setQuantity(tier.qty);
+        var comp  = document.querySelector('salla-quantity-input');
         var input = document.querySelector('salla-quantity-input input, salla-quantity-input .s-quantity-input-input');
+        if (comp)  comp.setAttribute('max',  tier.qty);
         if (input) input.setAttribute('max', tier.qty);
+        setQuantity(tier.qty);
       });
 
       list.appendChild(card);
@@ -824,7 +826,12 @@
     wrap.appendChild(list);
     anchor.insertAdjacentElement('afterend', wrap);
 
-    setQuantity(UPSELL_CONFIG.tiers[0].qty);
+    var initQty  = UPSELL_CONFIG.tiers[0].qty;
+    var initComp = document.querySelector('salla-quantity-input');
+    var initInp  = document.querySelector('salla-quantity-input input, salla-quantity-input .s-quantity-input-input');
+    if (initComp) initComp.setAttribute('max', initQty);
+    if (initInp)  initInp.setAttribute('max',  initQty);
+    setQuantity(initQty);
   }
 
   function findAnchor() {
