@@ -1,4 +1,4 @@
-/* cross-sell.js — hamtaro.sa cross-sell popup | v1.16.0 */
+/* cross-sell.js — hamtaro.sa cross-sell popup | v1.17.0 */
 (function () {
   'use strict';
 
@@ -58,7 +58,14 @@
       subtitle:          'منتجات يطلبها العملاء معها دائماً'
     },
     {
-      triggerCategories: ['1090483385', '4760862'],
+      triggerCategories: ['1090483385'],
+      upsellCategory:    '1822601915',
+      discount:          10,
+      title:             'أكمل أدوات قطتك وفّر 10%',
+      subtitle:          'ليتربوكس بخصم خاص مع كل طلب رمل'
+    },
+    {
+      triggerCategories: ['4760862'],
       upsellCategory:    '269929068',
       discount:          15,
       title:             'تخلص من رائحة الرمل وفّر 15%',
