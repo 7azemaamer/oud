@@ -824,6 +824,10 @@
         if (selectedTier) selectedTier.classList.remove('pe-selected');
         card.classList.add('pe-selected');
         selectedTier = card;
+        var comp  = document.querySelector('salla-quantity-input');
+        var input = document.querySelector('salla-quantity-input input, salla-quantity-input .s-quantity-input-input');
+        if (comp)  comp.setAttribute('max',  tier.qty);
+        if (input) input.setAttribute('max', tier.qty);
         setQuantity(tier.qty);
       });
 
