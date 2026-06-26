@@ -696,13 +696,24 @@
   }
 
   function setQuantity(qty) {
-    var input = document.querySelector('salla-quantity-input input') ||
-                document.querySelector('salla-quantity-input .s-quantity-input-input');
-    if (!input) return;
-    var setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
-    setter.call(input, qty);
-    input.dispatchEvent(new Event('input',  { bubbles: true }));
-    input.dispatchEvent(new Event('change', { bubbles: true }));
+    var comp  = document.querySelector('salla-quantity-input');
+    var input = comp && (comp.querySelector('input') || comp.querySelector('.s-quantity-input-input'));
+    if (!comp && !input) return;
+
+    /* Update the web component's own value attribute/property first —
+       the component re-renders off these and would otherwise reset the input */
+    if (comp) {
+      comp.setAttribute('value', qty);
+      try { comp.value = qty; } catch (e) {}
+    }
+
+    /* Also drive the inner input so cart-SDK listeners see the change */
+    if (input) {
+      var setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+      setter.call(input, qty);
+      input.dispatchEvent(new Event('input',  { bubbles: true }));
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    }
   }
 
   function injectUpsellTiers() {
@@ -813,10 +824,6 @@
         if (selectedTier) selectedTier.classList.remove('pe-selected');
         card.classList.add('pe-selected');
         selectedTier = card;
-        var comp  = document.querySelector('salla-quantity-input');
-        var input = document.querySelector('salla-quantity-input input, salla-quantity-input .s-quantity-input-input');
-        if (comp)  comp.setAttribute('max',  tier.qty);
-        if (input) input.setAttribute('max', tier.qty);
         setQuantity(tier.qty);
       });
 
