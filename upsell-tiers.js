@@ -1,4 +1,4 @@
-/* upsell-tiers.js — hamtaro.sa quantity upsell tiers | v1.0.0 */
+/* upsell-tiers.js — hamtaro.sa quantity upsell tiers | v1.1.4 */
 (function () {
   if (document.getElementById('pe-upsell-styles')) return;
   var s = document.createElement('style');
@@ -723,11 +723,7 @@
     var unitPrice = UPSELL_CONFIG.unitPrice || readUnitPrice();
     if (unitPrice === null) return;
 
-    var anchor = document.querySelector('section.sku.details') ||
-                 document.querySelector('section.sku') ||
-                 document.querySelector('.main-content salla-quantity-input') ||
-                 document.querySelector('.main-content salla-add-product-button') ||
-                 document.querySelector('.main-content .price');
+    var anchor = findAnchor();
     if (!anchor) return;
 
     var wrap = document.createElement('div');
@@ -846,11 +842,7 @@
   }
 
   function findAnchor() {
-    return document.querySelector('section.sku.details') ||
-           document.querySelector('section.sku') ||
-           document.querySelector('.main-content salla-quantity-input') ||
-           document.querySelector('.main-content salla-add-product-button') ||
-           document.querySelector('.main-content .price');
+    return document.querySelector('#product-tabs');
   }
 
   function run() {
